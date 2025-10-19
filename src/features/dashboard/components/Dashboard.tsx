@@ -5,13 +5,22 @@
  */
 
 import { DashboardTile } from './DashboardTile';
+import { FIREScenarioSelectorTile } from './FIREScenarioSelectorTile';
+import { TimeToFITile } from './TimeToFITile';
+import { MonteCarloDistribution } from './MonteCarloDistribution';
+import { DashboardInsights } from './DashboardInsights';
+import { ScenarioComparison } from './ScenarioComparison';
 import { SpendingTrendsChart } from './SpendingTrendsChart';
 import { CategoryBreakdownChart } from './CategoryBreakdownChart';
 import { UpcomingBillsWidget } from './UpcomingBillsWidget';
 import { useDashboardMetrics } from '../hooks/useDashboardMetrics';
 import { formatCurrency } from '@/lib/format';
 
-export function Dashboard() {
+interface DashboardProps {
+  onNavigateToScenarios?: (scenarioId?: string) => void;
+}
+
+export function Dashboard({ onNavigateToScenarios }: DashboardProps = {}) {
   const metrics = useDashboardMetrics();
 
   return (
@@ -23,7 +32,12 @@ export function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* FIRE Scenario Selector - Full Width */}
+      <div className="mb-6">
+        <FIREScenarioSelectorTile onNavigateToScenarios={onNavigateToScenarios} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Net Worth */}
         <DashboardTile
           title="Net Worth"
@@ -62,24 +76,25 @@ export function Dashboard() {
             </svg>
           }
         />
+      </div>
 
-        {/* FIRE Progress */}
-        <DashboardTile
-          title="FIRE Progress"
-          value={`${metrics.progressToFire.toFixed(1)}%`}
-          subtitle={
-            metrics.yearsToFire !== null
-              ? `~${metrics.yearsToFire.toFixed(1)} years to FI`
-              : 'Keep tracking expenses!'
-          }
-          color="accent"
-          icon={
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
-            </svg>
-          }
+      {/* Time to FI Tile - Full Width */}
+      <div className="mt-6">
+        <TimeToFITile
+          currentNetWorth={metrics.netWorth}
+          annualExpenses={metrics.monthlySpending * 12}
+          annualSavings={(metrics.monthlyIncome - metrics.monthlySpending) * 12}
         />
+      </div>
+
+      {/* Monte Carlo Distribution - Full Width */}
+      <div className="mt-6">
+        <MonteCarloDistribution />
+      </div>
+
+      {/* Smart Insights Panel - Full Width */}
+      <div className="mt-6">
+        <DashboardInsights />
       </div>
 
       {/* FIRE Number Details */}
@@ -182,6 +197,11 @@ export function Dashboard() {
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SpendingTrendsChart />
         <CategoryBreakdownChart />
+      </div>
+
+      {/* Scenario Comparison - Full Width */}
+      <div className="mt-6">
+        <ScenarioComparison />
       </div>
 
       {/* Upcoming Bills */}

@@ -252,9 +252,22 @@ async function createDefaultAccountGroups(): Promise<Map<string, string>> {
  * Create default accounts linked to account groups
  */
 async function createDefaultAccounts(groupMap: Map<string, string>) {
+  // Map account group names to valid account types
+  const typeMap: Record<string, string> = {
+    'Checking': 'checking',
+    'Savings': 'savings',
+    'Credit Card': 'credit',
+    'Investment': 'investment',
+    'Retirement': 'retirement',
+    'HSA': 'hsa',
+    'Mortgage': 'mortgage',
+    'Cash': 'cash',
+    'Asset': 'asset',
+  };
+
   const accounts = DEFAULT_ACCOUNT_GROUPS.map((group) => ({
     name: group.name,
-    type: group.name.toLowerCase().replace(/\s+/g, '_'), // DEPRECATED: Kept for backward compatibility. TODO(v2.0): Remove this field
+    type: typeMap[group.name] || 'checking', // Map to valid type or default to checking
     account_group_id: groupMap.get(group.name),
     opening_balance: 0,
     current_balance: 0,

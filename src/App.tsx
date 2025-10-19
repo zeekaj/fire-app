@@ -14,11 +14,13 @@ import { AccountsList } from './features/accounts';
 import { QuickAddTransaction } from './features/transactions/components/QuickAddTransaction';
 import { TransactionsList } from './features/transactions/components/TransactionsList';
 import { BillsList } from './features/bills';
+import { ScenariosPage } from './features/scenarios';
 
 function App() {
   const { user } = useAuth();
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'budgets' | 'accounts' | 'bills' | 'transactions'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'scenarios' | 'budgets' | 'accounts' | 'bills' | 'transactions'>('dashboard');
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -83,6 +85,19 @@ function App() {
                 Dashboard
               </button>
               <button
+                onClick={() => {
+                  setActiveTab('scenarios');
+                  setSelectedScenarioId(null); // Reset to list view
+                }}
+                className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'scenarios'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Scenarios
+              </button>
+              <button
                 onClick={() => setActiveTab('budgets')}
                 className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'budgets'
@@ -129,7 +144,15 @@ function App() {
         <main>
           {/* Dashboard Tab */}
           {activeTab === 'dashboard' && (
-            <Dashboard />
+            <Dashboard onNavigateToScenarios={(scenarioId) => {
+              setActiveTab('scenarios');
+              setSelectedScenarioId(scenarioId || null);
+            }} />
+          )}
+
+          {/* Scenarios Tab */}
+          {activeTab === 'scenarios' && (
+            <ScenariosPage initialSelectedScenarioId={selectedScenarioId} />
           )}
 
           {/* Budgets Tab */}

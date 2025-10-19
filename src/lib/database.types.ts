@@ -6,282 +6,601 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export interface Database {
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
   public: {
     Tables: {
       account_groups: {
         Row: {
-          id: string
-          created_by: string
-          name: string
-          icon: string | null
           color: string | null
-          sort_order: number
-          is_system: boolean
-          created_at: string
+          created_at: string | null
+          created_by: string
+          icon: string | null
+          id: string
+          is_system: boolean | null
+          name: string
+          sort_order: number | null
         }
         Insert: {
-          id?: string
-          created_by: string
-          name: string
-          icon?: string | null
           color?: string | null
-          sort_order?: number
-          is_system?: boolean
-          created_at?: string
+          created_at?: string | null
+          created_by: string
+          icon?: string | null
+          id?: string
+          is_system?: boolean | null
+          name: string
+          sort_order?: number | null
         }
         Update: {
-          id?: string
-          created_by?: string
-          name?: string
-          icon?: string | null
           color?: string | null
-          sort_order?: number
-          is_system?: boolean
-          created_at?: string
+          created_at?: string | null
+          created_by?: string
+          icon?: string | null
+          id?: string
+          is_system?: boolean | null
+          name?: string
+          sort_order?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "account_groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       accounts: {
         Row: {
-          id: string
-          created_by: string
-          name: string
-          type: string // DEPRECATED: Use account_group_id instead. Kept for backward compatibility. Planned removal in v2.0
           account_group_id: string | null
-          opening_balance: number
-          current_balance: number
+          created_at: string | null
+          created_by: string
+          current_balance: number | null
+          id: string
+          is_archived: boolean | null
+          name: string
+          opening_balance: number | null
+          type: string
+          updated_at: string | null
           valuation_updated_at: string | null
-          is_archived: boolean
-          created_at: string
-          updated_at: string
         }
         Insert: {
-          id?: string
-          created_by: string
-          name: string
-          type: string // DEPRECATED: Use account_group_id instead. Kept for backward compatibility. Planned removal in v2.0
           account_group_id?: string | null
-          opening_balance?: number
-          current_balance?: number
+          created_at?: string | null
+          created_by: string
+          current_balance?: number | null
+          id?: string
+          is_archived?: boolean | null
+          name: string
+          opening_balance?: number | null
+          type: string
+          updated_at?: string | null
           valuation_updated_at?: string | null
-          is_archived?: boolean
-          created_at?: string
-          updated_at?: string
         }
         Update: {
-          id?: string
-          created_by?: string
-          name?: string
-          type?: string // DEPRECATED: Use account_group_id instead. Kept for backward compatibility. Planned removal in v2.0
           account_group_id?: string | null
-          opening_balance?: number
-          current_balance?: number
+          created_at?: string | null
+          created_by?: string
+          current_balance?: number | null
+          id?: string
+          is_archived?: boolean | null
+          name?: string
+          opening_balance?: number | null
+          type?: string
+          updated_at?: string | null
           valuation_updated_at?: string | null
-          is_archived?: boolean
-          created_at?: string
-          updated_at?: string
         }
-      }
-      categories: {
-        Row: {
-          id: string
-          created_by: string
-          name: string
-          parent_id: string | null
-          path: string | null
-          is_envelope: boolean
-          is_budgetable: boolean
-          is_transfer: boolean
-          is_debt_service: boolean
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          created_by: string
-          name: string
-          parent_id?: string | null
-          path?: string | null
-          is_envelope?: boolean
-          is_budgetable?: boolean
-          is_transfer?: boolean
-          is_debt_service?: boolean
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          created_by?: string
-          name?: string
-          parent_id?: string | null
-          path?: string | null
-          is_envelope?: boolean
-          is_budgetable?: boolean
-          is_transfer?: boolean
-          is_debt_service?: boolean
-          created_at?: string
-        }
-      }
-      payees: {
-        Row: {
-          id: string
-          created_by: string
-          name: string
-          default_category_id: string | null
-          default_account_id: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          created_by: string
-          name: string
-          default_category_id?: string | null
-          default_account_id?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          created_by?: string
-          name?: string
-          default_category_id?: string | null
-          default_account_id?: string | null
-          created_at?: string
-        }
-      }
-      transactions: {
-        Row: {
-          id: string
-          created_by: string
-          date: string
-          account_id: string
-          amount: number
-          payee_id: string | null
-          category_id: string | null
-          tags: string[]
-          notes: string | null
-          is_pending: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          created_by: string
-          date: string
-          account_id: string
-          amount: number
-          payee_id?: string | null
-          category_id?: string | null
-          tags?: string[]
-          notes?: string | null
-          is_pending?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          created_by?: string
-          date?: string
-          account_id?: string
-          amount?: number
-          payee_id?: string | null
-          category_id?: string | null
-          tags?: string[]
-          notes?: string | null
-          is_pending?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      budgets: {
-        Row: {
-          id: string
-          created_by: string
-          month: string
-          category_id: string
-          target: number
-          model: string
-          carry: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          created_by: string
-          month: string
-          category_id: string
-          target: number
-          model: string
-          carry?: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          created_by?: string
-          month?: string
-          category_id?: string
-          target?: number
-          model?: string
-          carry?: number
-          created_at?: string
-        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_account_group_id_fkey"
+            columns: ["account_group_id"]
+            isOneToOne: false
+            referencedRelation: "account_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bills: {
         Row: {
-          id: string
-          created_by: string
-          name: string
-          amount: number
           account_id: string
+          amount: number
           category_id: string
+          created_at: string | null
+          created_by: string
+          id: string
+          name: string
+          next_due: string | null
+          notes: string | null
           payee_id: string | null
           rrule: string
-          next_due: string | null
           status: string
-          notes: string | null
-          created_at: string
         }
         Insert: {
-          id?: string
-          created_by: string
-          name: string
-          amount: number
           account_id: string
+          amount: number
           category_id: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          name: string
+          next_due?: string | null
+          notes?: string | null
           payee_id?: string | null
           rrule: string
-          next_due?: string | null
           status?: string
-          notes?: string | null
-          created_at?: string
         }
         Update: {
-          id?: string
-          created_by?: string
-          name?: string
-          amount?: number
           account_id?: string
+          amount?: number
           category_id?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          name?: string
+          next_due?: string | null
+          notes?: string | null
           payee_id?: string | null
           rrule?: string
-          next_due?: string | null
           status?: string
-          notes?: string | null
-          created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "bills_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_payee_id_fkey"
+            columns: ["payee_id"]
+            isOneToOne: false
+            referencedRelation: "payees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budgets: {
+        Row: {
+          carry: number | null
+          category_id: string
+          created_at: string | null
+          created_by: string
+          id: string
+          model: string
+          month: string
+          target: number
+        }
+        Insert: {
+          carry?: number | null
+          category_id: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          model: string
+          month: string
+          target: number
+        }
+        Update: {
+          carry?: number | null
+          category_id?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          model?: string
+          month?: string
+          target?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          is_budgetable: boolean | null
+          is_debt_service: boolean | null
+          is_envelope: boolean | null
+          is_transfer: boolean | null
+          name: string
+          parent_id: string | null
+          path: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          is_budgetable?: boolean | null
+          is_debt_service?: boolean | null
+          is_envelope?: boolean | null
+          is_transfer?: boolean | null
+          name: string
+          parent_id?: string | null
+          path?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          is_budgetable?: boolean | null
+          is_debt_service?: boolean | null
+          is_envelope?: boolean | null
+          is_transfer?: boolean | null
+          name?: string
+          parent_id?: string | null
+          path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      migrations_log: {
+        Row: {
+          created_by: string
+          id: string
+          kind: string
+          mapping: Json
+          run_at: string | null
+        }
+        Insert: {
+          created_by: string
+          id?: string
+          kind: string
+          mapping: Json
+          run_at?: string | null
+        }
+        Update: {
+          created_by?: string
+          id?: string
+          kind?: string
+          mapping?: Json
+          run_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "migrations_log_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payees: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          default_account_id: string | null
+          default_category_id: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          default_account_id?: string | null
+          default_category_id?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          default_account_id?: string | null
+          default_category_id?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payees_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payees_default_account_id_fkey"
+            columns: ["default_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payees_default_category_id_fkey"
+            columns: ["default_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scenarios: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          death_date: string
+          expenses: number | null
+          id: string
+          inflation: number | null
+          mean_return_real: number | null
+          name: string
+          notes: string | null
+          portfolio_stocks: number | null
+          portfolio_value_now: number | null
+          retirement_date: string | null
+          savings: number | null
+          stdev_return_real: number | null
+          swr: number | null
+          use_historical: boolean | null
+          use_monte_carlo: boolean | null
+          withdrawal_rule: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          death_date: string
+          expenses?: number | null
+          id?: string
+          inflation?: number | null
+          mean_return_real?: number | null
+          name: string
+          notes?: string | null
+          portfolio_stocks?: number | null
+          portfolio_value_now?: number | null
+          retirement_date?: string | null
+          savings?: number | null
+          stdev_return_real?: number | null
+          swr?: number | null
+          use_historical?: boolean | null
+          use_monte_carlo?: boolean | null
+          withdrawal_rule: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          death_date?: string
+          expenses?: number | null
+          id?: string
+          inflation?: number | null
+          mean_return_real?: number | null
+          name?: string
+          notes?: string | null
+          portfolio_stocks?: number | null
+          portfolio_value_now?: number | null
+          retirement_date?: string | null
+          savings?: number | null
+          stdev_return_real?: number | null
+          swr?: number | null
+          use_historical?: boolean | null
+          use_monte_carlo?: boolean | null
+          withdrawal_rule?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenarios_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settings: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          export_prefs: Json | null
+          feature_flags: Json | null
+          id: string
+          learning: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          export_prefs?: Json | null
+          feature_flags?: Json | null
+          id?: string
+          learning?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          export_prefs?: Json | null
+          feature_flags?: Json | null
+          id?: string
+          learning?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      snapshots: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          data: Json
+          id: string
+          kind: string
+          period: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          data: Json
+          id?: string
+          kind: string
+          period: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          data?: Json
+          id?: string
+          kind?: string
+          period?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snapshots_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          account_id: string
+          amount: number
+          category_id: string | null
+          created_at: string | null
+          created_by: string
+          date: string
+          id: string
+          is_pending: boolean | null
+          notes: string | null
+          payee_id: string | null
+          tags: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          category_id?: string | null
+          created_at?: string | null
+          created_by: string
+          date: string
+          id?: string
+          is_pending?: boolean | null
+          notes?: string | null
+          payee_id?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          category_id?: string | null
+          created_at?: string | null
+          created_by?: string
+          date?: string
+          id?: string
+          is_pending?: boolean | null
+          notes?: string | null
+          payee_id?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_payee_id_fkey"
+            columns: ["payee_id"]
+            isOneToOne: false
+            referencedRelation: "payees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {
-          id: string
+          created_at: string | null
           email: string | null
-          created_at: string
+          id: string
         }
         Insert: {
-          id?: string
+          created_at?: string | null
           email?: string | null
-          created_at?: string
+          id: string
         }
         Update: {
-          id?: string
+          created_at?: string | null
           email?: string | null
-          created_at?: string
+          id?: string
         }
+        Relationships: []
       }
     }
     Views: {
@@ -293,10 +612,131 @@ export interface Database {
     Enums: {
       [_ in never]: never
     }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
 
-// Helper type for accounts with joined account_group data
-export type AccountWithGroup = Database['public']['Tables']['accounts']['Row'] & {
-  account_group: Database['public']['Tables']['account_groups']['Row'] | null
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
 }
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

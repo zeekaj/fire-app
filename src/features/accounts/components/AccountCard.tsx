@@ -17,7 +17,8 @@ export function AccountCard({ account }: AccountCardProps) {
   const { name, current_balance, account_group } = account;
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  const isNegative = current_balance < 0;
+  const balance = current_balance ?? 0;
+  const isNegative = balance < 0;
   
   // Get group color or use default
   const groupColor = account_group?.color || '#6B7280';
@@ -60,7 +61,7 @@ export function AccountCard({ account }: AccountCardProps) {
               isNegative ? 'text-danger' : 'text-gray-900'
             }`}
           >
-            {formatCurrency(current_balance)}
+            {formatCurrency(balance)}
           </div>
         </div>
       </div>

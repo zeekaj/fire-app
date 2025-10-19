@@ -35,7 +35,7 @@ export function EditAccountModal({ isOpen, onClose, account }: EditAccountModalP
     if (account) {
       setName(account.name);
       setSelectedGroupId(account.account_group_id || '');
-      setCurrentBalance(account.current_balance.toString());
+      setCurrentBalance((account.current_balance ?? 0).toString());
       setShowDeleteConfirm(false);
       setShowNewGroupForm(false);
     }
@@ -278,7 +278,7 @@ export function EditAccountModal({ isOpen, onClose, account }: EditAccountModalP
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Opening balance: {account.opening_balance.toFixed(2)}
+                  Opening balance: {(account.opening_balance ?? 0).toFixed(2)}
                 </p>
               </div>
 

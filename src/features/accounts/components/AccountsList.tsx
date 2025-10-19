@@ -70,12 +70,12 @@ export function AccountsList() {
   }
 
   // Group accounts by equity type
-  const assetAccounts = accounts.filter(a => a.current_balance >= 0);
-  const liabilityAccounts = accounts.filter(a => a.current_balance < 0);
+  const assetAccounts = accounts.filter(a => (a.current_balance ?? 0) >= 0);
+  const liabilityAccounts = accounts.filter(a => (a.current_balance ?? 0) < 0);
 
   // Calculate totals
-  const totalAssets = assetAccounts.reduce((sum, a) => sum + a.current_balance, 0);
-  const totalLiabilities = liabilityAccounts.reduce((sum, a) => sum + Math.abs(a.current_balance), 0);
+  const totalAssets = assetAccounts.reduce((sum, a) => sum + (a.current_balance ?? 0), 0);
+  const totalLiabilities = liabilityAccounts.reduce((sum, a) => sum + Math.abs(a.current_balance ?? 0), 0);
   const netWorth = totalAssets - totalLiabilities;
 
   // Group accounts by account_group for the groups view
@@ -202,7 +202,7 @@ export function AccountsList() {
             const groupAccounts = accountsByGroup.get(group.id) || [];
             if (groupAccounts.length === 0) return null;
 
-            const groupTotal = groupAccounts.reduce((sum, a) => sum + a.current_balance, 0);
+            const groupTotal = groupAccounts.reduce((sum, a) => sum + (a.current_balance ?? 0), 0);
 
             return (
               <div key={group.id}>
