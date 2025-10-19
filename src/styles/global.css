@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-text;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'tnum'; /* Tabular figures for numbers */
+  }
+
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Card styling */
+  .card {
+    @apply bg-card rounded-[14px] shadow-sm p-card border border-gray-100;
+  }
+
+  .card-lg {
+    @apply bg-card rounded-[14px] shadow-sm p-card-lg border border-gray-100;
+  }
+
+  /* Button variants */
+  .btn-primary {
+    @apply px-4 py-2 bg-primary hover:bg-primary-hover text-white font-medium rounded-[14px] transition-all duration-150 shadow-sm hover:shadow-md;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-accent hover:bg-accent/90 text-white font-medium rounded-[14px] transition-all duration-150 shadow-sm hover:shadow-md;
+  }
+
+  .btn-outline {
+    @apply px-4 py-2 border border-gray-300 hover:border-primary hover:text-primary font-medium rounded-[14px] transition-all duration-150;
+  }
+
+  /* Input styling */
+  .input {
+    @apply px-3 py-2 border border-gray-300 rounded-[14px] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-150;
+  }
+
+  /* Negative currency (red with minus) */
+  .currency-negative {
+    @apply text-danger;
+  }
+}
