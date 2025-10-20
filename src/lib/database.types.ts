@@ -373,15 +373,18 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string
+          current_age: number
           death_date: string
           expenses: number | null
           id: string
           inflation: number | null
+          life_expectancy: number
           mean_return_real: number | null
           name: string
           notes: string | null
           portfolio_stocks: number | null
           portfolio_value_now: number | null
+          retirement_age: number
           retirement_date: string | null
           savings: number | null
           stdev_return_real: number | null
@@ -393,15 +396,18 @@ export type Database = {
         Insert: {
           created_at?: string | null
           created_by: string
+          current_age?: number
           death_date: string
           expenses?: number | null
           id?: string
           inflation?: number | null
+          life_expectancy?: number
           mean_return_real?: number | null
           name: string
           notes?: string | null
           portfolio_stocks?: number | null
           portfolio_value_now?: number | null
+          retirement_age?: number
           retirement_date?: string | null
           savings?: number | null
           stdev_return_real?: number | null
@@ -413,15 +419,18 @@ export type Database = {
         Update: {
           created_at?: string | null
           created_by?: string
+          current_age?: number
           death_date?: string
           expenses?: number | null
           id?: string
           inflation?: number | null
+          life_expectancy?: number
           mean_return_real?: number | null
           name?: string
           notes?: string | null
           portfolio_stocks?: number | null
           portfolio_value_now?: number | null
+          retirement_age?: number
           retirement_date?: string | null
           savings?: number | null
           stdev_return_real?: number | null
@@ -448,6 +457,7 @@ export type Database = {
           feature_flags: Json | null
           id: string
           learning: Json | null
+          selected_scenario_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -456,6 +466,7 @@ export type Database = {
           feature_flags?: Json | null
           id?: string
           learning?: Json | null
+          selected_scenario_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -464,6 +475,7 @@ export type Database = {
           feature_flags?: Json | null
           id?: string
           learning?: Json | null
+          selected_scenario_id?: string | null
         }
         Relationships: [
           {
@@ -471,6 +483,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: true
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settings_selected_scenario_id_fkey"
+            columns: ["selected_scenario_id"]
+            isOneToOne: false
+            referencedRelation: "scenarios"
             referencedColumns: ["id"]
           },
         ]

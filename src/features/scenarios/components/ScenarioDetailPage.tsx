@@ -12,6 +12,7 @@ import { MonteCarloHistogram } from './charts/MonteCarloHistogram';
 import { HistoricalChart } from './charts/HistoricalChart';
 import { WithdrawalStrategyComparison } from './charts/WithdrawalStrategyComparison';
 import { ChartErrorBoundary } from './ChartErrorBoundary';
+import { EditScenarioModal } from './EditScenarioModal';
 import { 
   runMonteCarloSimulation, 
   runHistoricalSimulation,
@@ -28,6 +29,7 @@ interface ScenarioDetailPageProps {
 
 export function ScenarioDetailPage({ scenario, onBack }: ScenarioDetailPageProps) {
   const [isLoadingSimulations, setIsLoadingSimulations] = useState(true);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   // Calculate projected portfolio at retirement
   const projectedPortfolioAtRetirement = useMemo(() => {
     const yearsToRetirement = Math.max(0, scenario.retirement_age - scenario.current_age);
@@ -105,9 +107,10 @@ export function ScenarioDetailPage({ scenario, onBack }: ScenarioDetailPageProps
           </div>
 
           <div className="flex gap-2">
-            <button
-              onClick={() => alert('Edit functionality coming soon! For now, you can create a new scenario with updated values.')}
-              className="p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                        <button
+              className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              onClick={() => setIsEditModalOpen(true)}
+              disabled={isLoadingSimulations}
               title="Edit scenario"
             >
               <Edit2 className="w-5 h-5" />
@@ -266,6 +269,13 @@ export function ScenarioDetailPage({ scenario, onBack }: ScenarioDetailPageProps
           </div>
         </div>
       </div>
+
+      {/* Edit Scenario Modal */}
+      <EditScenarioModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        scenario={scenario}
+      />
     </div>
   );
 }

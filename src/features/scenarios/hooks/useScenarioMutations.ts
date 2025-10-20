@@ -107,9 +107,12 @@ export function useScenarioMutations() {
     mutationFn: ({ id, updates }: { id: string; updates: ScenarioUpdate }) =>
       updateScenario(id, updates),
     onSuccess: (data) => {
-      // Invalidate both list and single scenario queries
+      // Invalidate scenarios queries
       queryClient.invalidateQueries({ queryKey: ['scenarios'] });
       queryClient.invalidateQueries({ queryKey: ['scenarios', data.id] });
+      // Also invalidate selected scenario queries in case this was the selected one
+      queryClient.invalidateQueries({ queryKey: ['selectedScenario'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardMetrics'] });
     },
   });
 

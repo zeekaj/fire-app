@@ -14,6 +14,7 @@ import { useBudgetableCategories } from '../hooks/useCategories';
 import { usePayees } from '../hooks/usePayees';
 import { useCreatePayee } from '../hooks/useCreatePayee';
 import { useCreateTransaction } from '../hooks/useTransactions';
+import { PayeeSuggestionInput } from './PayeeSuggestionInput';
 import { logger } from '@/lib/logger';
 
 interface QuickAddTransactionProps {
@@ -36,7 +37,6 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
   const [notes, setNotes] = useState('');
 
   const dateInputRef = useRef<HTMLInputElement>(null);
-  const payeeInputRef = useRef<HTMLInputElement>(null);
 
   // Set default account when accounts load
   useEffect(() => {
@@ -45,12 +45,7 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
     }
   }, [accounts, accountId]);
 
-  // Focus payee input when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => payeeInputRef.current?.focus(), 100);
-    }
-  }, [isOpen]);
+  // The PayeeSuggestionInput handles its own autoFocus
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -76,16 +71,31 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
   }, [isOpen, onClose]);
 
   // Auto-fill category when payee is selected
-  const handlePayeeChange = (value: string) => {
+  const handlePayeeChange = (value: string, suggestion?: {
+    id: string;
+    name: string;
+    default_category_id: string | null;
+    default_account_id: string | null;
+  }) => {
     setPayeeName(value);
 
-    // Find matching payee
-    const matchingPayee = payees.find(
-      (p) => p.name.toLowerCase() === value.toLowerCase()
-    );
+    // If a suggestion is provided, use its default values
+    if (suggestion) {
+      if (suggestion.default_category_id) {
+        setCategoryId(suggestion.default_category_id);
+      }
+      if (suggestion.default_account_id && !accountId) {
+        setAccountId(suggestion.default_account_id);
+      }
+    } else {
+      // Fallback to the old logic for manual entry
+      const matchingPayee = payees.find(
+        (p) => p.name.toLowerCase() === value.toLowerCase()
+      );
 
-    if (matchingPayee && matchingPayee.default_category_id) {
-      setCategoryId(matchingPayee.default_category_id);
+      if (matchingPayee && matchingPayee.default_category_id) {
+        setCategoryId(matchingPayee.default_category_id);
+      }
     }
   };
 
@@ -210,26 +220,13 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Payee
               </label>
-              <input
-                ref={payeeInputRef}
-                type="text"
-                list="payees"
+              <PayeeSuggestionInput
                 value={payeeName}
-                onChange={(e) => handlePayeeChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                onChange={handlePayeeChange}
                 placeholder="Enter or select payee..."
                 required
+                autoFocus
               />
-              <datalist id="payees">
-                {payees.map((payee) => (
-                  <option key={payee.id} value={payee.name} />
-                ))}
-              </datalist>
-              {payeeName && !payees.find((p) => p.name === payeeName) && (
-                <p className="text-xs text-green-600 mt-1">
-                  ✨ New payee "{payeeName}" will be created
-                </p>
-              )}
             </div>
 
             {/* Category */}

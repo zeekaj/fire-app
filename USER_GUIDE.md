@@ -1,387 +1,313 @@
-# FIRE Finance App - User Guide
+# 📚 FIRE Finance App - User Guide
 
-Welcome to your enhanced FIRE Finance app! Here's what's new and how to use each feature.
+Welcome to your comprehensive **Financial Independence, Retire Early (FIRE)** companion! This guide will help you get the most out of all the app's features.
 
----
+## 🚀 Quick Start
 
-## 🏠 Dashboard Tab
+### First Login
+1. **Sign in with Google** - Secure authentication
+2. **Complete initial setup** - The app will guide you through account creation
+3. **Add your first accounts** - Start with checking and investment accounts
+4. **Create a FIRE scenario** - Set your retirement goals and assumptions
 
-Your financial overview at a glance.
-
-### Top Metrics (4 Tiles)
-```
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│ Net Worth    │ │ This Month's │ │ Savings Rate │ │ FIRE Progress│
-│ $45,000      │ │ Spending     │ │ 55.0%        │ │ 15.2%        │
-│ Across 5     │ │ $2,500       │ │ This month   │ │ ~25.3 years  │
-│ accounts     │ │ Income:$5,500│ │              │ │ to FI        │
-└──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
-```
-
-### FIRE Number Details
-Shows your FIRE goal calculation based on the 4% rule:
-- Annual expenses
-- FIRE number (25x annual expenses)
-- Current net worth
-- Remaining to reach FI
-- Circular progress indicator
-
-### Quick Stats (4 Cards)
-- Accounts count
-- Transactions count
-- Monthly income
-- Monthly savings
-
-### 📊 Spending Trends Chart
-Line chart showing the last 6 months:
-- **Green line:** Monthly income
-- **Red line:** Monthly spending
-- **Blue line:** Monthly savings
-
-**How to use:**
-- Hover over any point to see exact amounts
-- Look for trends (increasing/decreasing)
-- Compare income vs spending gaps
-
-### 🥧 Category Breakdown Chart
-Pie chart of this month's spending by category:
-- Shows top 8 categories
-- Percentage labels on each slice
-- Total spending at top
-
-**How to use:**
-- Identify your biggest spending categories
-- Look for surprises or areas to optimize
-- Click legend items to highlight slices
-
-### 📅 Upcoming Bills
-Shows next 5 bills due in 30 days:
-- Bill name and payee
-- Amount due
-- Days until due (color-coded)
-- Total upcoming amount
-
-**Color coding:**
-- Gray: More than 7 days away
-- Yellow: 4-7 days away
-- Orange: 1-3 days away
-- Red: Overdue
+### Navigation Basics
+- **Desktop**: Use the tab navigation at the top
+- **Mobile**: Access the hamburger menu (☰) or bottom tab navigation
+- **Quick Actions**: Press 'N' anywhere to add a transaction
+- **Help**: Press 'Shift + ?' for instant help or click the floating help button
 
 ---
 
-## 💵 Budgets Tab
+## 🏠 Dashboard
 
-Manage your monthly spending targets.
+Your financial command center with real-time FIRE progress tracking.
 
-### Month Navigation
-Use `◀ ▶` arrows to navigate between months.
+### Key Metrics
+- **Time to FIRE** - Based on your current savings rate and projections
+- **Probability of Success** - Monte Carlo simulation results
+- **Net Worth Tracking** - Real-time portfolio value
+- **Savings Rate** - Monthly and annual savings performance
 
-### Summary Cards
-```
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│ Total        │ │ Total Spent  │ │ Remaining    │
-│ Budgeted     │ │              │ │              │
-│ $3,000       │ │ $2,400       │ │ $600         │
-└──────────────┘ └──────────────┘ └──────────────┘
-```
+### Investment Reminders
+The dashboard shows intelligent alerts for:
+- **Portfolio Rebalancing** - When allocation drifts >5% from target
+- **Contribution Reminders** - If you haven't invested in 60+ days
+- **Age-Appropriate Warnings** - If allocation is too aggressive for your age
+- **Low Investment Allocation** - If too much money is sitting in cash
 
-### 📊 Budget Overview Chart
-Horizontal bar chart showing all budgets:
-- Bars sorted by percent used (highest first)
-- Color-coded by status:
-  - 🟢 Green: On track (<75%)
-  - 🟠 Amber: Caution (75-90%)
-  - 🟡 Yellow: Warning (90-100%)
-  - 🔴 Red: Over budget (≥100%)
-
-**How to use:**
-- Quickly spot over-budget categories
-- See which budgets are doing well
-- Hover for detailed spent/budgeted info
-
-### Budget List
-Detailed view of each budget:
-- Category name
-- Spent amount
-- Budget target (click to edit)
-- Remaining amount
-- Progress bar with percentage
-
-**How to edit a budget:**
-1. Click on the budget amount
-2. Enter new amount
-3. Click ✓ to save or ✕ to cancel
-4. Or press Enter/Escape
-
-**How to add a budget:**
-1. Click "+ Add Budget"
-2. Select category
-3. Enter monthly target
-4. Click "Add Budget"
+### Charts & Analytics
+- **Monte Carlo Distribution** - Probability curves for different outcomes
+- **Historical Performance** - How your strategy would have performed historically
+- **Scenario Comparison** - Compare multiple FIRE strategies side-by-side
 
 ---
 
-## 📝 Bills Tab
+## 💰 FIRE Scenarios
 
-Manage your recurring bills.
+Model different retirement strategies to find your optimal path.
 
-### Header
-- Shows total count
-- **"Groups View"** button to switch organization
-- **"+ Add Bill"** button
+### Creating Scenarios
+1. **Click "Add Scenario"** from the dashboard or scenarios tab
+2. **Name your scenario** (e.g., "Conservative FIRE", "Coast FIRE")
+3. **Set your ages**:
+   - Current age
+   - Target retirement age  
+   - Life expectancy
+4. **Financial inputs**:
+   - Current savings/net worth
+   - Annual contributions
+   - Annual expenses in retirement
+5. **Investment assumptions**:
+   - Stock allocation percentage
+   - Expected returns and volatility
+   - Inflation rate
+6. **Withdrawal strategy**:
+   - **Fixed**: Traditional 4% rule
+   - **Percentage**: Dynamic percentage withdrawal
+   - **Guardrails**: Adjusts withdrawals based on portfolio performance
 
-### Active Bills Section
-All currently active recurring bills showing:
-- Bill name
-- Payee (if set)
-- Category and account
-- Amount
-- Next due date
-- Days until due
-- Notes (if any)
+### Scenario Analysis
+- **Monte Carlo Simulation** - Runs 10,000+ scenarios to estimate success probability
+- **Historical Backtesting** - Tests your strategy against real market data
+- **Stress Testing** - See how market crashes would affect your plan
 
-**Actions for each bill:**
-- **Pay Now** - Record payment (creates transaction)
-- **Edit** - Modify bill details
-- **Pause** - Temporarily stop reminders
-- **Delete** - Remove permanently
-
-### Paused Bills Section
-Bills you've paused (shown with reduced opacity):
-- Same information as active bills
-- **Resume** button to reactivate
-
-### How to Add a Bill
-1. Click "+ Add Bill"
-2. Fill in required fields:
-   - Bill name (e.g., "Electric Bill")
-   - Amount
-   - Account to pay from
-   - Category
-   - Frequency (Weekly/Monthly/Quarterly/Yearly)
-   - Next due date
-3. Optional: Add payee and notes
-4. Click "Add Bill"
-
-### How to Pay a Bill
-1. Click "Pay Now" on any bill
-2. Confirm or adjust amount
-3. Set payment date (defaults to today)
-4. Click "Mark as Paid"
-
-**What happens:**
-- Transaction is created in your account
-- Next due date is updated automatically
-- Bill shows new due date
+### Tips for Better Scenarios
+- **Be Conservative** - Use realistic return expectations (7-8% historical average)
+- **Consider Inflation** - 2-3% annual inflation is typical
+- **Plan for Sequence Risk** - Early retirement years are most vulnerable
+- **Test Multiple Strategies** - Compare different approaches
 
 ---
 
-## 🏦 Accounts Tab
+## 🏦 Account Management
 
-View all your financial accounts.
+Track all your financial accounts in one place.
 
-### Toggle Views
-Switch between:
-- **Equity View** (default) - Assets vs Liabilities
-- **Groups View** - Organized by account groups
+### Supported Account Types
+- **Checking** - Daily spending accounts
+- **Savings** - Emergency funds and short-term savings
+- **Investment** - Taxable brokerage accounts
+- **Retirement** - 401k, IRA, Roth IRA accounts
+- **HSA** - Health Savings Accounts
+- **Credit** - Credit cards and lines of credit
+- **Mortgage** - Home loans and other debts
+- **Cash** - Physical cash holdings
+- **Asset** - Real estate, vehicles, other assets
 
-### Equity View (Default)
+### Account Groups
+Organize accounts by type for better reporting:
+- **Cash & Checking** - Liquid funds
+- **Investment** - Growth-focused accounts
+- **Retirement** - Tax-advantaged accounts
+- **Debt** - Liabilities to track
 
-#### Net Worth Summary
-```
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│ Assets       │ │ Liabilities  │ │ Net Worth    │
-│ $50,000      │ │ $10,000      │ │ $40,000      │
-│ 4 accounts   │ │ 1 account    │ │ Total equity │
-└──────────────┘ └──────────────┘ └──────────────┘
-```
-
-#### Assets Section
-All accounts with positive balances:
-- Checking accounts
-- Savings accounts
-- Investment accounts
-- Cash accounts
-
-#### Liabilities Section  
-All accounts with negative balances:
-- Credit cards
-- Loans
-- Mortgages
-
-**Account cards show:**
-- Account name
-- Account group badge (colored)
-- Current balance
-- Edit button (hover to see)
-
-### Groups View
-Shows accounts organized by their account groups:
-- Each group shows total balance
-- Accounts listed under their group
-- Groups with no accounts are hidden
-
-### How to Add an Account
-1. Click "+ Add Account"
-2. Enter account name
-3. Select account group
-4. Enter opening balance
-5. Click "Add Account"
-
-### How to Edit an Account
-1. Hover over account card
-2. Click edit icon (appears in top-right)
-3. Modify details
-4. Click "Save Changes"
+### Best Practices
+- **Update balances regularly** - For accurate net worth tracking
+- **Use investment accounts** - Better growth potential than cash
+- **Track debt separately** - Monitor liabilities alongside assets
+- **Archive unused accounts** - Keep your list clean
 
 ---
 
-## 💳 Transactions Tab
+## 📝 Smart Transactions
 
-View and manage all transactions.
+Advanced transaction tracking with intelligent features.
 
-### Quick Add Transaction (Keyboard Shortcut: N)
-Fast entry for daily transactions:
-- Date
-- Account
-- Amount (positive for income, negative for expense)
-- Category
-- Payee (optional)
-- Notes (optional)
+### Quick Entry (Keyboard Shortcut)
+- **Press 'N'** anywhere in the app to open quick-add transaction
+- **Tab navigation** - Move between fields quickly
+- **Smart suggestions** - Payees and categories are suggested as you type
 
-### Transaction List
-All recent transactions showing:
-- Date
-- Account name
-- Payee
-- Category
-- Amount (color-coded: green for income, red for expenses)
-- Notes
+### Smart Payee Suggestions
+The app learns from your transaction history to provide:
+- **Usage-based ordering** - Most frequent payees appear first
+- **Recent activity** - Recently used payees get priority
+- **Quick access buttons** - One-click selection for common payees
+- **Visual indicators** - See usage statistics and frequency
 
-**Actions:**
-- Edit transaction (click on it)
-- Delete transaction
+### Transaction Features
+- **Auto-categorization** - Learns from your patterns
+- **Bulk operations** - Edit multiple transactions at once
+- **Search and filter** - Find specific transactions quickly
+- **Tags** - Add custom tags for better organization
 
----
-
-## ⌨️ Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| `N` | Open quick add transaction modal |
-| `Escape` | Close any modal |
-| `Enter` | Submit form / Save edit |
+### Categories
+- **Hierarchical structure** - Main categories with subcategories
+- **Budget integration** - Categories link to budget targets
+- **Custom categories** - Create categories that fit your lifestyle
+- **Transfer handling** - Mark categories as transfers to avoid double-counting
 
 ---
 
-## 🎨 Color Guide
+## 📅 Bills & Budgets
 
-### Status Colors
-- 🟢 **Green** - Positive, success, on track, income
-- 🔴 **Red** - Negative, danger, over budget, expenses
-- 🟡 **Yellow** - Warning, caution
-- 🟠 **Orange** - Attention needed
-- 🔵 **Blue** - Informational, neutral, savings
+Manage recurring expenses and spending targets.
 
-### Chart Colors
-- **Income:** Green (#2BB673)
-- **Spending:** Red (#D64550)
-- **Savings:** Blue (#2E86AB)
-- **Primary:** Orange (#E4572E)
+### Recurring Bills
+- **RRULE support** - Complex recurring patterns (monthly, bi-weekly, etc.)
+- **Due date tracking** - Never miss a payment
+- **Automatic categorization** - Bills auto-assign to categories
+- **Status management** - Mark bills as paid or pending
 
----
+### Budget Planning
+- **Monthly targets** - Set spending limits by category
+- **Envelope budgeting** - Optional zero-based budgeting
+- **Progress tracking** - Real-time budget vs actual comparison
+- **Rollover support** - Unused budget can carry forward
 
-## 💡 Tips & Best Practices
-
-### Getting Started
-1. **Add your accounts first** - Start with checking, savings, credit cards
-2. **Set up categories** - Use the defaults or create your own
-3. **Enter some transactions** - Last month's spending is enough
-4. **Create budgets** - Set targets for key categories
-5. **Add recurring bills** - Never miss a payment
-
-### Daily Use
-1. **Use keyboard shortcut "N"** to quickly add transactions
-2. **Check dashboard** to see spending trends
-3. **Review upcoming bills** to plan cash flow
-4. **Update budgets monthly** based on actual spending
-
-### Monthly Review
-1. Navigate to **Budgets** tab
-2. Review actual vs budgeted spending
-3. Look at **Category Breakdown** on dashboard
-4. Check **Spending Trends** for patterns
-5. Adjust next month's budgets accordingly
-
-### FIRE Progress Tracking
-1. Update account balances regularly
-2. Track net worth changes on **Accounts** tab
-3. Monitor **FIRE Progress** tile on dashboard
-4. Review **Savings Rate** monthly
-5. Celebrate milestones!
+### Budget Tips
+- **Start with actuals** - Base budgets on real spending data
+- **Leave some flexibility** - Don't budget every penny
+- **Review monthly** - Adjust budgets based on life changes
+- **Use envelopes for discretionary spending** - Stricter control when needed
 
 ---
 
-## 📱 Mobile Tips
+## ❓ Help & Support System
 
-The app is responsive and works on mobile:
-- Charts stack vertically
-- Touch-friendly buttons
-- Scrollable lists
-- Swipe-friendly navigation
+Comprehensive support system with multiple ways to get help.
 
-Best mobile experience:
-- Use in landscape for charts
-- Dashboard is your home base
-- Quick add transaction works great on mobile
+### Getting Help
+- **Floating Help Button** - Bottom-right corner, always accessible
+- **Keyboard Shortcut** - Press 'Shift + ?' for instant help
+- **Contextual Help** - Click the help icon next to section headers
+- **Issues Modal** - Report bugs or request features
 
----
+### Types of Help Available
+1. **Quick Help** - Hover tooltips and contextual guidance
+2. **Detailed Help** - Comprehensive explanations with tips and troubleshooting
+3. **Bug Reports** - Report issues with detailed form
+4. **Feature Requests** - Suggest new functionality
+5. **General Feedback** - Share your thoughts and experiences
 
-## 🔒 Data Privacy
-
-Your financial data is:
-- ✅ **Private** - Only you can see it
-- ✅ **Secure** - Protected by Supabase Row Level Security
-- ✅ **Isolated** - Each user's data is completely separate
-- ✅ **Backed up** - Supabase handles backups automatically
-
----
-
-## ❓ Common Questions
-
-**Q: How do I track net worth over time?**  
-A: Currently, net worth is calculated live. Historical tracking coming soon!
-
-**Q: Can I import transactions from my bank?**  
-A: Not yet - this is a manual-entry app. Keeps you mindful of spending!
-
-**Q: What's the 4% rule for FIRE?**  
-A: Withdraw 4% of your portfolio annually in retirement. Your FIRE number is 25x your annual expenses.
-
-**Q: How often should I update account balances?**  
-A: Weekly or bi-weekly is ideal. Monthly at minimum.
-
-**Q: Can I delete a category that has transactions?**  
-A: Currently no - this prevents data loss. Rename it instead!
-
-**Q: What happens if I miss a bill payment?**  
-A: The bill shows as "OVERDUE" in red. You can still pay it anytime.
-
-**Q: Can I have multiple budgets for the same category?**  
-A: No - one budget per category per month. Edit the existing budget instead.
+### Help Content Includes
+- **Feature explanations** - How to use each part of the app
+- **Best practices** - Tips for optimal results
+- **Common issues** - Solutions to frequent problems
+- **Related topics** - Links to relevant help sections
 
 ---
 
-## 🚀 What's Next?
+## 📱 Mobile Experience
 
-Planned features:
-- Net worth history and trending
-- Budget vs actual charts
-- Transaction search and filters
-- Bulk transaction import
-- Mobile app
-- Dark mode
+Optimized for use on phones and tablets.
+
+### Mobile Navigation
+- **Bottom tabs** - Easy thumb navigation
+- **Hamburger menu** - Access all features from slide-out menu
+- **Swipe gestures** - Natural mobile interactions
+- **Touch optimization** - Properly sized touch targets
+
+### Mobile-Specific Features
+- **Responsive design** - Adapts to any screen size
+- **Touch-friendly forms** - Large input fields and buttons
+- **Mobile keyboard support** - Proper input types for better typing
+- **Offline indicators** - Clear status when connection is poor
 
 ---
 
-**Happy tracking! You're on your way to FIRE! 🔥**
+## 🔐 Security & Privacy
+
+Your financial data is protected with enterprise-grade security.
+
+### Authentication
+- **Google OAuth** - Secure, industry-standard authentication
+- **No password storage** - We never store your password
+- **Session management** - Automatic logout for security
+
+### Data Protection
+- **Row Level Security** - Only you can see your data
+- **Encrypted transmission** - All data sent over HTTPS
+- **Supabase security** - Enterprise-grade database security
+- **No data selling** - We never share or sell your information
+
+### Privacy Controls
+- **Data ownership** - You own all your financial data
+- **Export capability** - Download your data anytime
+- **Account deletion** - Remove all data if you choose to leave
+
+---
+
+## 🎯 FIRE Strategy Tips
+
+### Getting Started with FIRE
+1. **Calculate your FI number** - Typically 25x annual expenses
+2. **Determine your savings rate** - Higher rate = faster FIRE
+3. **Optimize your investments** - Low-cost index funds are popular
+4. **Plan for healthcare** - Major expense in early retirement
+5. **Consider your lifestyle** - Make sure FIRE fits your goals
+
+### Common FIRE Approaches
+- **Lean FIRE** - Minimal expenses, lower FI number
+- **Fat FIRE** - Higher lifestyle, larger FI number  
+- **Coast FIRE** - Save enough to coast to traditional retirement
+- **Barista FIRE** - Partial retirement with some income
+
+### Using the App for FIRE Success
+- **Model multiple scenarios** - Test different approaches
+- **Track progress regularly** - Monthly check-ins keep you motivated
+- **Adjust as needed** - Life changes, so should your plan
+- **Use investment reminders** - Stay on track with contributions and rebalancing
+
+---
+
+## 🛟 Troubleshooting
+
+### Common Issues
+
+**Q: My scenarios show unrealistic results**
+- Check your return assumptions (7-8% is historical average)
+- Verify your current age and expenses are correct
+- Make sure withdrawal strategy makes sense for your goals
+
+**Q: Transactions aren't categorizing correctly**
+- Train the system by manually categorizing similar transactions
+- Check that payee names are consistent
+- Use the transaction search to find and fix patterns
+
+**Q: Investment reminders aren't showing**
+- Ensure you have investment accounts set up
+- Check that your scenario has realistic portfolio allocation
+- Verify account balances are up to date
+
+**Q: Mobile navigation isn't working**
+- Try refreshing the page
+- Check that JavaScript is enabled
+- Clear your browser cache
+
+### Getting Additional Help
+- Use the **Issues Modal** (floating help button → Report Bug)
+- Press **Shift + ?** for contextual help
+- Check the **help tooltips** throughout the app
+- Look for **help icons** (❓) next to section headers
+
+---
+
+## 🎉 Advanced Tips
+
+### Power User Features
+- **Keyboard shortcuts** - 'N' for transactions, 'Shift + ?' for help
+- **Bulk operations** - Select multiple items for batch actions
+- **Custom categories** - Create categories that match your lifestyle
+- **Multiple scenarios** - Compare different FIRE strategies
+- **Investment reminders** - Automate your portfolio maintenance
+
+### Maximizing Accuracy
+- **Regular updates** - Update account balances monthly
+- **Consistent categorization** - Use the same categories for similar expenses
+- **Realistic assumptions** - Conservative estimates are usually better
+- **Transaction details** - Add notes for complex transactions
+
+### Staying Motivated
+- **Celebrate milestones** - Track your progress over time
+- **Share success** - Use the feedback system to share your wins
+- **Adjust goals** - It's OK to change your FIRE timeline
+- **Focus on process** - Consistent habits matter more than perfect numbers
+
+---
+
+*Happy FIRE planning! 🔥*
+
+---
+
+*Last updated: October 2025*

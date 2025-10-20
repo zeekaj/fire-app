@@ -9,6 +9,7 @@ import { FIREScenarioSelectorTile } from './FIREScenarioSelectorTile';
 import { TimeToFITile } from './TimeToFITile';
 import { MonteCarloDistribution } from './MonteCarloDistribution';
 import { DashboardInsights } from './DashboardInsights';
+import { InvestmentRemindersTile } from './InvestmentReminders';
 import { ScenarioComparison } from './ScenarioComparison';
 import { SpendingTrendsChart } from './SpendingTrendsChart';
 import { CategoryBreakdownChart } from './CategoryBreakdownChart';
@@ -18,9 +19,10 @@ import { formatCurrency } from '@/lib/format';
 
 interface DashboardProps {
   onNavigateToScenarios?: (scenarioId?: string) => void;
+  onNavigate?: (tab: string) => void;
 }
 
-export function Dashboard({ onNavigateToScenarios }: DashboardProps = {}) {
+export function Dashboard({ onNavigateToScenarios, onNavigate }: DashboardProps = {}) {
   const metrics = useDashboardMetrics();
 
   return (
@@ -95,6 +97,16 @@ export function Dashboard({ onNavigateToScenarios }: DashboardProps = {}) {
       {/* Smart Insights Panel - Full Width */}
       <div className="mt-6">
         <DashboardInsights />
+      </div>
+
+      {/* Investment Reminders - Full Width */}
+      <div className="mt-6">
+        <InvestmentRemindersTile onNavigate={onNavigate} />
+      </div>
+
+      {/* Investment Reminders - Full Width */}
+      <div className="mt-6">
+        <InvestmentRemindersTile onNavigate={onNavigate} />
       </div>
 
       {/* FIRE Number Details */}
