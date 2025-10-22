@@ -13,9 +13,18 @@ export function useDashboardMetrics() {
   const { data: transactions = [] } = useTransactions(100);
 
   const metrics = useMemo(() => {
-    // Calculate Net Worth
+    // Calculate Net Worth - properly handle assets vs liabilities
     const netWorth = accounts.reduce((sum, account) => {
-      return sum + (account.current_balance || 0);
+      const balance = account.current_balance || 0;
+      
+      // Credit cards and mortgages are always liabilities
+      const liabilityTypes = ['credit', 'mortgage'];
+      if (liabilityTypes.includes(account.type)) {
+        return sum - Math.abs(balance); // Subtract liabilities
+      }
+      
+      // For other accounts, use balance sign to determine asset/liability
+      return sum + balance;
     }, 0);
 
     // Calculate this month's spending

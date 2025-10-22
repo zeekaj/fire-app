@@ -16,6 +16,7 @@ import { QuickAddTransaction } from './features/transactions/components/QuickAdd
 import { TransactionsList } from './features/transactions/components/TransactionsList';
 import { BillsList } from './features/bills';
 import { ScenariosPage } from './features/scenarios';
+import { ProfilePage } from './features/profile/components/ProfilePage';
 import { Breadcrumb } from './components/Breadcrumb';
 import { MobileNavigation } from './components/MobileNavigation';
 import { TabNavigation } from './components/TabNavigation';
@@ -55,6 +56,48 @@ function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // const [isLoading, setIsLoading] = useState(true);
+
+  // useEffect(() => {
+  //   const loadData = async () => {
+  //     try {
+  //       // Simulate data loading
+  //       await new Promise((resolve) => setTimeout(resolve, 1000));
+  //     } catch (error) {
+  //       logger.error('Data loading error', error);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+
+  //   loadData();
+  // }, []);
+
+  // if (isLoading) {
+  //   return <div className="p-4">Loading...</div>;
+  // }
+
+  const renderContent = () => {
+    switch (navigation.activeTab) {
+      case 'dashboard':
+        return <Dashboard onNavigate={navigation.navigateToTab} />;
+      case 'accounts':
+        return <AccountsList />;
+      case 'transactions':
+        return <TransactionsList />;
+      case 'bills':
+        return <BillsList />;
+      case 'budgets':
+        return <MonthlyBudgets />;
+      case 'scenarios':
+        return <ScenariosPage initialSelectedScenarioId={navigation.selectedScenarioId} />;
+      case 'profile':
+        return <ProfilePage />;
+      default:
+        return <Dashboard onNavigate={navigation.navigateToTab} />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,41 +148,7 @@ function App() {
         </header>
 
         <main className="pb-20 lg:pb-0">
-          {/* Dashboard Tab */}
-          {navigation.activeTab === 'dashboard' && (
-            <Dashboard 
-              onNavigateToScenarios={(scenarioId) => {
-                navigation.navigateToTab('scenarios');
-                navigation.setScenario(scenarioId || null);
-              }}
-              onNavigate={(tab) => navigation.navigateToTab(tab as any)}
-            />
-          )}
-
-          {/* Scenarios Tab */}
-          {navigation.activeTab === 'scenarios' && (
-            <ScenariosPage initialSelectedScenarioId={navigation.selectedScenarioId} />
-          )}
-
-          {/* Budgets Tab */}
-          {navigation.activeTab === 'budgets' && (
-            <MonthlyBudgets />
-          )}
-
-          {/* Bills Tab */}
-          {navigation.activeTab === 'bills' && (
-            <BillsList />
-          )}
-
-          {/* Accounts Tab */}
-          {navigation.activeTab === 'accounts' && (
-            <AccountsList />
-          )}
-
-          {/* Transactions Tab */}
-          {navigation.activeTab === 'transactions' && (
-            <TransactionsList />
-          )}
+          {renderContent()}
         </main>
       </div>
 

@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 
-export type AppTab = 'dashboard' | 'scenarios' | 'budgets' | 'bills' | 'accounts' | 'transactions';
+export type AppTab = 'dashboard' | 'scenarios' | 'budgets' | 'bills' | 'accounts' | 'transactions' | 'profile';
 
 export interface NavigationState {
   activeTab: AppTab;
@@ -80,6 +80,7 @@ export function useEnhancedNavigation() {
         bills: 'Bills',
         accounts: 'Accounts',
         transactions: 'Transactions',
+        profile: 'Profile',
       };
 
       items.push({

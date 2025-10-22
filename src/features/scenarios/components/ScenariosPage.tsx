@@ -16,6 +16,8 @@ import {
   type MonteCarloConfig,
 } from '@/lib/sim';
 import { ScenarioDetailPage } from './ScenarioDetailPage';
+import { FIREScenarioSelectorTile } from './FIREScenarioSelectorTile';
+import { ScenarioTimeToFICard } from './ScenarioTimeToFICard';
 
 interface ScenariosPageProps {
   initialSelectedScenarioId?: string | null;
@@ -102,7 +104,17 @@ export function ScenariosPage({ initialSelectedScenarioId }: ScenariosPageProps 
   if (selectedScenarioId) {
     const selected = scenarios?.find((s: ScenarioDisplay) => s.id === selectedScenarioId);
     if (selected) {
-      return <ScenarioDetailPage scenario={selected} onBack={() => setSelectedScenarioId(null)} />;
+      return (
+        <div>
+          <button onClick={() => setSelectedScenarioId(null)} className="text-blue-600 hover:underline mb-4">
+            &larr; Back to all scenarios
+          </button>
+          <ScenarioTimeToFICard scenario={selected} />
+          <div className="mt-6">
+            <ScenarioDetailPage scenario={selected} onBack={() => setSelectedScenarioId(null)} />
+          </div>
+        </div>
+      )
     }
   }
 
@@ -122,6 +134,11 @@ export function ScenariosPage({ initialSelectedScenarioId }: ScenariosPageProps 
         >
           + New Scenario
         </button>
+      </div>
+
+      {/* FIRE Scenario Selector */}
+      <div className="mb-6">
+        <FIREScenarioSelectorTile onNavigateToScenarios={setSelectedScenarioId} />
       </div>
 
       {/* Scenarios List */}

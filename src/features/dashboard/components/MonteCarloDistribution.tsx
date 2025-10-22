@@ -17,7 +17,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { runMonteCarloSimulation, type MonteCarloConfig } from '@/lib/sim';
-import { useSelectedScenario } from '../hooks/useSelectedScenario';
+import { useSelectedScenario } from '@/features/scenarios/hooks/useSelectedScenario';
 
 export function MonteCarloDistribution() {
   const { selectedScenario } = useSelectedScenario();

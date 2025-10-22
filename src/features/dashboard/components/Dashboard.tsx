@@ -5,24 +5,18 @@
  */
 
 import { DashboardTile } from './DashboardTile';
-import { FIREScenarioSelectorTile } from './FIREScenarioSelectorTile';
-import { TimeToFITile } from './TimeToFITile';
-import { MonteCarloDistribution } from './MonteCarloDistribution';
+import { ProjectedTimeToFICard } from './ProjectedTimeToFICard';
 import { DashboardInsights } from './DashboardInsights';
 import { InvestmentRemindersTile } from './InvestmentReminders';
-import { ScenarioComparison } from './ScenarioComparison';
-import { SpendingTrendsChart } from './SpendingTrendsChart';
-import { CategoryBreakdownChart } from './CategoryBreakdownChart';
-import { UpcomingBillsWidget } from './UpcomingBillsWidget';
 import { useDashboardMetrics } from '../hooks/useDashboardMetrics';
 import { formatCurrency } from '@/lib/format';
+import { AppTab } from '@/lib/useEnhancedNavigation';
 
 interface DashboardProps {
-  onNavigateToScenarios?: (scenarioId?: string) => void;
-  onNavigate?: (tab: string) => void;
+  onNavigate?: (tab: AppTab) => void;
 }
 
-export function Dashboard({ onNavigateToScenarios, onNavigate }: DashboardProps = {}) {
+export function Dashboard({ onNavigate }: DashboardProps = {}) {
   const metrics = useDashboardMetrics();
 
   return (
@@ -34,9 +28,9 @@ export function Dashboard({ onNavigateToScenarios, onNavigate }: DashboardProps 
         </p>
       </div>
 
-      {/* FIRE Scenario Selector - Full Width */}
+      {/* Time to FI Tile - Full Width */}
       <div className="mb-6">
-        <FIREScenarioSelectorTile onNavigateToScenarios={onNavigateToScenarios} />
+        <ProjectedTimeToFICard />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -80,20 +74,6 @@ export function Dashboard({ onNavigateToScenarios, onNavigate }: DashboardProps 
         />
       </div>
 
-      {/* Time to FI Tile - Full Width */}
-      <div className="mt-6">
-        <TimeToFITile
-          currentNetWorth={metrics.netWorth}
-          annualExpenses={metrics.monthlySpending * 12}
-          annualSavings={(metrics.monthlyIncome - metrics.monthlySpending) * 12}
-        />
-      </div>
-
-      {/* Monte Carlo Distribution - Full Width */}
-      <div className="mt-6">
-        <MonteCarloDistribution />
-      </div>
-
       {/* Smart Insights Panel - Full Width */}
       <div className="mt-6">
         <DashboardInsights />
@@ -102,123 +82,6 @@ export function Dashboard({ onNavigateToScenarios, onNavigate }: DashboardProps 
       {/* Investment Reminders - Full Width */}
       <div className="mt-6">
         <InvestmentRemindersTile onNavigate={onNavigate} />
-      </div>
-
-      {/* Investment Reminders - Full Width */}
-      <div className="mt-6">
-        <InvestmentRemindersTile onNavigate={onNavigate} />
-      </div>
-
-      {/* FIRE Number Details */}
-      <div className="mt-6 bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-xl p-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Your FIRE Number
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Based on the 4% rule (25x annual expenses)
-            </p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-8">
-                <span className="text-sm text-gray-600">Annual Expenses:</span>
-                <span className="text-sm font-semibold text-gray-900">
-                  {formatCurrency(metrics.monthlySpending * 12)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-8">
-                <span className="text-sm text-gray-600">FIRE Number (25x):</span>
-                <span className="text-lg font-bold text-primary">
-                  {formatCurrency(metrics.fireNumber)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-8">
-                <span className="text-sm text-gray-600">Current Net Worth:</span>
-                <span className="text-sm font-semibold text-gray-900">
-                  {formatCurrency(metrics.netWorth)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-8">
-                <span className="text-sm text-gray-600">Remaining:</span>
-                <span className="text-sm font-semibold text-accent">
-                  {formatCurrency(Math.max(0, metrics.fireNumber - metrics.netWorth))}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Progress Bar */}
-          <div className="flex-shrink-0 w-32">
-            <div className="relative w-32 h-32">
-              <svg className="transform -rotate-90 w-32 h-32">
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="56"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  fill="transparent"
-                  className="text-gray-200"
-                />
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="56"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  fill="transparent"
-                  strokeDasharray={`${2 * Math.PI * 56}`}
-                  strokeDashoffset={`${2 * Math.PI * 56 * (1 - Math.min(metrics.progressToFire / 100, 1))}`}
-                  className="text-primary transition-all duration-1000"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-2xl font-bold text-gray-900">
-                  {metrics.progressToFire.toFixed(0)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Accounts</p>
-          <p className="text-2xl font-bold text-gray-900">{metrics.accountCount}</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Transactions</p>
-          <p className="text-2xl font-bold text-gray-900">{metrics.transactionCount}</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Monthly Income</p>
-          <p className="text-2xl font-bold text-success">{formatCurrency(metrics.monthlyIncome)}</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Monthly Savings</p>
-          <p className="text-2xl font-bold text-accent">
-            {formatCurrency(metrics.monthlyIncome - metrics.monthlySpending)}
-          </p>
-        </div>
-      </div>
-
-      {/* Charts */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SpendingTrendsChart />
-        <CategoryBreakdownChart />
-      </div>
-
-      {/* Scenario Comparison - Full Width */}
-      <div className="mt-6">
-        <ScenarioComparison />
-      </div>
-
-      {/* Upcoming Bills */}
-      <div className="mt-6">
-        <UpcomingBillsWidget />
       </div>
     </div>
   );

@@ -11,7 +11,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
-import { useSelectedScenario } from './useSelectedScenario';
+import { useSelectedScenario } from '@/features/scenarios/hooks/useSelectedScenario';
 // Note: useSettings hook doesn't exist yet, so we'll create a simple fallback
 const useSettings = () => ({ data: null as any });
 

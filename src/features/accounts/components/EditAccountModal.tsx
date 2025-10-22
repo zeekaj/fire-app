@@ -60,11 +60,27 @@ export function EditAccountModal({ isOpen, onClose, account }: EditAccountModalP
       return;
     }
 
+    // Find the selected group to determine account type
+    const selectedGroup = accountGroups?.find(g => g.id === selectedGroupId);
+    const typeMap: Record<string, string> = {
+      'Checking': 'checking',
+      'Savings': 'savings',
+      'Credit Card': 'credit',
+      'Investment': 'investment',
+      'Retirement': 'retirement',
+      'HSA': 'hsa',
+      'Mortgage': 'mortgage',
+      'Cash': 'cash',
+      'Asset': 'asset',
+    };
+    const accountType = selectedGroup ? (typeMap[selectedGroup.name] || 'checking') : 'checking';
+
     try {
       await updateAccount.mutateAsync({
         id: account.id,
         updates: {
           name: name.trim(),
+          type: accountType,
           account_group_id: selectedGroupId,
           current_balance: balance,
           updated_at: new Date().toISOString(),

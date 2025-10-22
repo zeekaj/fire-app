@@ -41,10 +41,25 @@ export function AddAccountModal({ isOpen, onClose }: AddAccountModalProps) {
 
     const balance = parseFloat(openingBalance) || 0;
 
+    // Find the selected group to determine account type
+    const selectedGroup = accountGroups?.find(g => g.id === selectedGroupId);
+    const typeMap: Record<string, string> = {
+      'Checking': 'checking',
+      'Savings': 'savings',
+      'Credit Card': 'credit',
+      'Investment': 'investment',
+      'Retirement': 'retirement',
+      'HSA': 'hsa',
+      'Mortgage': 'mortgage',
+      'Cash': 'cash',
+      'Asset': 'asset',
+    };
+    const accountType = selectedGroup ? (typeMap[selectedGroup.name] || 'checking') : 'checking';
+
     try {
       await createAccount.mutateAsync({
         name: name.trim(),
-        type: 'checking', // Keep for backwards compatibility
+        type: accountType,
         account_group_id: selectedGroupId,
         opening_balance: balance,
         current_balance: balance,

@@ -69,13 +69,23 @@ export function AccountsList() {
     );
   }
 
-  // Group accounts by equity type
-  const assetAccounts = accounts.filter(a => (a.current_balance ?? 0) >= 0);
-  const liabilityAccounts = accounts.filter(a => (a.current_balance ?? 0) < 0);
+  // Group accounts by equity type (Assets vs Liabilities)
+  // Credit cards and mortgages are always liabilities regardless of balance
+  const isLiabilityAccount = (account: typeof accounts[0]) => {
+    const liabilityTypes = ['credit', 'mortgage'];
+    return liabilityTypes.includes(account.type) || (account.current_balance ?? 0) < 0;
+  };
+
+  const assetAccounts = accounts.filter(a => !isLiabilityAccount(a));
+  const liabilityAccounts = accounts.filter(a => isLiabilityAccount(a));
 
   // Calculate totals
   const totalAssets = assetAccounts.reduce((sum, a) => sum + (a.current_balance ?? 0), 0);
-  const totalLiabilities = liabilityAccounts.reduce((sum, a) => sum + Math.abs(a.current_balance ?? 0), 0);
+  const totalLiabilities = liabilityAccounts.reduce((sum, a) => {
+    // For liabilities, we want the absolute value since negative balances represent positive debt
+    const balance = a.current_balance ?? 0;
+    return sum + Math.abs(balance);
+  }, 0);
   const netWorth = totalAssets - totalLiabilities;
 
   // Group accounts by account_group for the groups view

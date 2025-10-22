@@ -12,7 +12,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase, requireAuth } from '@/lib/supabase';
 import { useSelectedScenario } from '../hooks/useSelectedScenario';
 import { useScenarioMutations } from '@/features/scenarios/hooks/useScenarioMutations';
-import { useDashboardMetrics } from '../hooks/useDashboardMetrics';
+import { useDashboardMetrics } from '@/features/dashboard/hooks/useDashboardMetrics';
 import { formatCurrency } from '@/lib/format';
 
 // Using any for now until database types are regenerated

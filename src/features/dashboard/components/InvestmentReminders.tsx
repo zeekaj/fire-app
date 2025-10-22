@@ -9,8 +9,10 @@ import { useState } from 'react';
 import { useInvestmentReminders } from '../hooks/useInvestmentReminders';
 import { useDismissReminder } from '../hooks/useDismissReminder';
 
+import { AppTab } from '@/lib/useEnhancedNavigation';
+
 interface InvestmentRemindersProps {
-  onNavigate?: (tab: string) => void;
+  onNavigate?: (tab: AppTab) => void;
 }
 
 export function InvestmentReminders({ onNavigate }: InvestmentRemindersProps = {}) {
@@ -186,12 +188,12 @@ export function InvestmentReminders({ onNavigate }: InvestmentRemindersProps = {
 /**
  * Compact version for dashboard tiles
  */
-export function InvestmentRemindersTile({ onNavigate }: { onNavigate?: (tab: string) => void }) {
+export function InvestmentRemindersTile({ onNavigate }: { onNavigate?: (tab: AppTab) => void }) {
   const { reminders, hasHighPriorityReminders, totalReminders } = useInvestmentReminders();
 
   if (totalReminders === 0) {
     return (
-      <div 
+      <div
         className="p-4 bg-green-50 border border-green-200 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
         onClick={() => onNavigate?.('accounts')}
       >
@@ -211,7 +213,7 @@ export function InvestmentRemindersTile({ onNavigate }: { onNavigate?: (tab: str
   const priorityReminder = reminders.find(r => r.priority === 'high') || reminders[0];
 
   return (
-    <div 
+    <div
       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
         hasHighPriorityReminders
           ? 'bg-red-50 border-red-200 hover:bg-red-100'
@@ -246,3 +248,4 @@ export function InvestmentRemindersTile({ onNavigate }: { onNavigate?: (tab: str
     </div>
   );
 }
+

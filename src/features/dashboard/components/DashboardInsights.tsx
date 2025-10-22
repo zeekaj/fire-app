@@ -6,7 +6,7 @@
  */
 
 import { useMemo } from 'react';
-import { useSelectedScenario } from '@/features/dashboard/hooks/useSelectedScenario';
+import { useSelectedScenario } from '@/features/scenarios/hooks/useSelectedScenario';
 import { useDashboardMetrics } from '../hooks/useDashboardMetrics';
 import { runMonteCarloSimulation, type MonteCarloConfig } from '@/lib/sim';
 
