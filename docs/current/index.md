@@ -11,8 +11,9 @@ Welcome to the FIRE Finance App documentation! This index will help you find the
 ### 🔮 Project Planning
 - **[FUTURE_ROADMAP.md](../FUTURE_ROADMAP.md)** - Upcoming features and long-term vision
 
-### 💻 Development
-- **[.github/copilot-instructions.md](../.github/copilot-instructions.md)** - Development guidelines and architecture notes
+### � **Bug Fixes & Troubleshooting**
+- **[CRITICAL_BUG_FIXES_OCT_2025.md](../CRITICAL_BUG_FIXES_OCT_2025.md)** - Recent critical bug fixes (credit cards, profiles, auth)
+- **[BUG_FIX_WITHDRAWAL_STRATEGY.md](../BUG_FIX_WITHDRAWAL_STRATEGY.md)** - Withdrawal strategy bug fix
 
 ## 📁 Current Documentation Structure
 
@@ -54,7 +55,13 @@ docs/
 - **Issues/Help System** - Comprehensive user support with contextual help
 - **Database Optimization** - Dedicated age columns for better performance
 
-### 🔄 Next Phase: Advanced Analytics & Insights
+### � Critical Bug Fixes (October 22, 2025)
+- **Credit Card Accounting** - Fixed liabilities incorrectly treated as assets
+- **Profile Creation** - Added automatic profile creation for new users  
+- **Google OAuth Authentication** - Restored production authentication flow
+- **Database Schema** - Added profiles table and improved account types
+
+### �🔄 Next Phase: Advanced Analytics & Insights
 See [FUTURE_ROADMAP.md](../FUTURE_ROADMAP.md) for detailed upcoming features.
 
 ## 📚 Key Resources
@@ -101,5 +108,5 @@ This documentation is actively maintained. If you notice outdated information:
 
 ---
 
-*Last Updated: October 2025*  
-*Current Version: Phase D Complete*
+*Last Updated: October 22, 2025*  
+*Current Version: Phase D Complete + Critical Bug Fixes*

@@ -166,6 +166,12 @@ The app implements proven FIRE strategies:
 - **Issues/Help System** - Comprehensive user support with contextual help
 - **Database Optimization** - Dedicated age columns for better performance
 
+### Critical Bug Fixes (October 2025)
+- **Credit Card Accounting** - Fixed liabilities being treated as assets, ensuring accurate net worth
+- **Profile Creation** - Added automatic profile creation for new users
+- **Google OAuth Authentication** - Restored production authentication flow
+- **Database Migrations** - Added profiles table and improved account type handling
+
 ## 🤝 Support
 
 - **Documentation:** See `/docs` folder for detailed guides
