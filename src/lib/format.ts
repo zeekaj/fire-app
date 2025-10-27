@@ -28,8 +28,19 @@ export function formatCurrency(amount: number): string {
 
 /**
  * Format date as MM/DD/YYYY
+ * Handles date strings without timezone conversion issues
  */
 export function formatDate(date: string | Date): string {
+  // If it's a string in YYYY-MM-DD format, parse it directly without timezone conversion
+  if (typeof date === 'string') {
+    const parts = date.split('T')[0].split('-'); // Handle both "YYYY-MM-DD" and ISO strings
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      return `${month}/${day}/${year}`;
+    }
+  }
+  
+  // Fallback for Date objects
   const d = typeof date === 'string' ? new Date(date) : date;
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -39,8 +50,14 @@ export function formatDate(date: string | Date): string {
 
 /**
  * Format date for input[type="date"] (YYYY-MM-DD)
+ * Ensures no timezone conversion
  */
 export function formatDateForInput(date: string | Date): string {
+  // If already a string in correct format, return as-is
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(date)) {
+    return date.split('T')[0];
+  }
+  
   const d = typeof date === 'string' ? new Date(date) : date;
   return d.toISOString().split('T')[0];
 }

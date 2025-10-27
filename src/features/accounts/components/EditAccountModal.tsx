@@ -20,7 +20,7 @@ interface EditAccountModalProps {
 export function EditAccountModal({ isOpen, onClose, account }: EditAccountModalProps) {
   const [name, setName] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState('');
-  const [currentBalance, setCurrentBalance] = useState('');
+  const [openingBalance, setOpeningBalance] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNewGroupForm, setShowNewGroupForm] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -35,7 +35,7 @@ export function EditAccountModal({ isOpen, onClose, account }: EditAccountModalP
     if (account) {
       setName(account.name);
       setSelectedGroupId(account.account_group_id || '');
-      setCurrentBalance((account.current_balance ?? 0).toString());
+      setOpeningBalance((account.opening_balance ?? 0).toString());
       setShowDeleteConfirm(false);
       setShowNewGroupForm(false);
     }
@@ -54,7 +54,7 @@ export function EditAccountModal({ isOpen, onClose, account }: EditAccountModalP
       return;
     }
 
-    const balance = parseFloat(currentBalance);
+    const balance = parseFloat(openingBalance);
     if (isNaN(balance)) {
       alert('Please enter a valid balance');
       return;
@@ -82,7 +82,7 @@ export function EditAccountModal({ isOpen, onClose, account }: EditAccountModalP
           name: name.trim(),
           type: accountType,
           account_group_id: selectedGroupId,
-          current_balance: balance,
+          opening_balance: balance,
           updated_at: new Date().toISOString(),
         },
       });
@@ -278,23 +278,23 @@ export function EditAccountModal({ isOpen, onClose, account }: EditAccountModalP
                 )}
               </div>
 
-              {/* Current Balance */}
+              {/* Beginning Balance */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Current Balance
+                  Beginning Balance
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-2 text-gray-500">$</span>
                   <input
                     type="number"
                     step="0.01"
-                    value={currentBalance}
-                    onChange={(e) => setCurrentBalance(e.target.value)}
+                    value={openingBalance}
+                    onChange={(e) => setOpeningBalance(e.target.value)}
                     className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Opening balance: {(account.opening_balance ?? 0).toFixed(2)}
+                  Current balance (auto-calculated): ${(account?.current_balance ?? 0).toFixed(2)}
                 </p>
               </div>
 

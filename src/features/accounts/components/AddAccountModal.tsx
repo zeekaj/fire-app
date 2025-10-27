@@ -219,10 +219,10 @@ export function AddAccountModal({ isOpen, onClose }: AddAccountModalProps) {
               </p>
             </div>
 
-            {/* Opening Balance */}
+            {/* Beginning Balance */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Current Balance
+                Beginning Balance
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-2 text-gray-500">$</span>

@@ -16,6 +16,7 @@ import { QuickAddTransaction } from './features/transactions/components/QuickAdd
 import { TransactionsList } from './features/transactions/components/TransactionsList';
 import { BillsList } from './features/bills';
 import { ScenariosPage } from './features/scenarios';
+import { CategoriesPage } from './features/categories';
 import { ProfilePage } from './features/profile/components/ProfilePage';
 import { Breadcrumb } from './components/Breadcrumb';
 import { MobileNavigation } from './components/MobileNavigation';
@@ -92,6 +93,8 @@ function App() {
         return <MonthlyBudgets />;
       case 'scenarios':
         return <ScenariosPage initialSelectedScenarioId={navigation.selectedScenarioId} />;
+      case 'categories':
+        return <CategoriesPage />;
       case 'profile':
         return <ProfilePage />;
       default:

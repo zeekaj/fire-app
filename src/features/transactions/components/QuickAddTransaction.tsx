@@ -5,38 +5,60 @@
  * Keyboard shortcuts:
  * - N: Open modal
  * - T: Set date to today
+ * - I: Toggle to Income
+ * - E: Toggle to Expense
  * - ESC: Close modal
+ * - Enter: Submit (when form is valid)
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
-import { useBudgetableCategories } from '../hooks/useCategories';
 import { usePayees } from '../hooks/usePayees';
 import { useCreatePayee } from '../hooks/useCreatePayee';
-import { useCreateTransaction } from '../hooks/useTransactions';
+import { useCreateTransaction, useTransactions } from '../hooks/useTransactions';
+import { useCreateTransfer } from '../hooks/useTransfer';
 import { PayeeSuggestionInput } from './PayeeSuggestionInput';
+import { CategorySuggestionInput } from './CategorySuggestionInput';
 import { logger } from '@/lib/logger';
+import { formatCurrency, formatDate } from '@/lib/format';
 
 interface QuickAddTransactionProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+type TransactionType = 'expense' | 'income' | 'transfer' | 'payment';
+
+// Common transaction templates
+const QUICK_TEMPLATES = [
+  { name: 'Coffee', amount: 5, icon: '☕' },
+  { name: 'Lunch', amount: 15, icon: '🍽️' },
+  { name: 'Gas', amount: 50, icon: '⛽' },
+  { name: 'Groceries', amount: 100, icon: '🛒' },
+];
+
 export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProps) {
   const { data: accounts = [] } = useAccounts();
-  const { data: categories = [] } = useBudgetableCategories();
   const { data: payees = [] } = usePayees();
+  const { data: recentTransactions = [] } = useTransactions(5);
   const createTransaction = useCreateTransaction();
+  const createTransfer = useCreateTransfer();
   const createPayee = useCreatePayee();
 
+  const [transactionType, setTransactionType] = useState<TransactionType>('expense');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [accountId, setAccountId] = useState('');
   const [payeeName, setPayeeName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Transfer/Payment-specific state
+  const [toAccountId, setToAccountId] = useState('');
 
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
 
   // Set default account when accounts load
   useEffect(() => {
@@ -52,12 +74,26 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // T = Today
-      if (e.key === 't' || e.key === 'T') {
-        if (document.activeElement === dateInputRef.current) {
-          e.preventDefault();
-          setDate(new Date().toISOString().split('T')[0]);
-        }
+      // Ignore if user is typing in an input
+      const target = e.target as HTMLElement;
+      const isInputField = target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA';
+
+      // T = Today (only in date field)
+      if ((e.key === 't' || e.key === 'T') && document.activeElement === dateInputRef.current) {
+        e.preventDefault();
+        setDate(new Date().toISOString().split('T')[0]);
+      }
+
+      // I = Income (when not typing)
+      if ((e.key === 'i' || e.key === 'I') && !isInputField) {
+        e.preventDefault();
+        setTransactionType('income');
+      }
+
+      // E = Expense (when not typing)
+      if ((e.key === 'e' || e.key === 'E') && !isInputField) {
+        e.preventDefault();
+        setTransactionType('expense');
       }
 
       // ESC = Close
@@ -78,6 +114,10 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
     default_account_id: string | null;
   }) => {
     setPayeeName(value);
+    // Clear error when user types
+    if (errors.payeeName) {
+      setErrors(prev => ({ ...prev, payeeName: '' }));
+    }
 
     // If a suggestion is provided, use its default values
     if (suggestion) {
@@ -99,21 +139,111 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
     }
   };
 
+  // Copy data from previous transaction
+  const copyPreviousTransaction = () => {
+    if (recentTransactions.length === 0) return;
+    
+    const lastTx = recentTransactions[0];
+    setAccountId(lastTx.account_id);
+    setCategoryId(lastTx.category_id || '');
+    setAmount(Math.abs(lastTx.amount).toString());
+    setTransactionType(lastTx.amount < 0 ? 'expense' : 'income');
+    
+    // Find and set payee name
+    const payee = payees.find(p => p.id === lastTx.payee_id);
+    if (payee) {
+      setPayeeName(payee.name);
+    }
+  };
+
+  // Apply quick template
+  const applyTemplate = (template: typeof QUICK_TEMPLATES[0]) => {
+    setPayeeName(template.name);
+    setAmount(template.amount.toString());
+    setTransactionType('expense');
+    
+    // Try to find matching payee
+    const matchingPayee = payees.find(
+      p => p.name.toLowerCase() === template.name.toLowerCase()
+    );
+    if (matchingPayee && matchingPayee.default_category_id) {
+      setCategoryId(matchingPayee.default_category_id);
+    }
+    
+    // Focus amount for easy adjustment
+    setTimeout(() => amountInputRef.current?.select(), 100);
+  };
+
+  // Validate form
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!accountId) newErrors.accountId = 'Account is required';
+    
+    // Only validate payee and category for expense/income transactions
+    if (transactionType !== 'transfer' && transactionType !== 'payment') {
+      if (!payeeName.trim()) newErrors.payeeName = 'Payee is required';
+      if (!categoryId) newErrors.categoryId = 'Category is required';
+    }
+    
+    // For transfers and payments, validate toAccountId
+    if (transactionType === 'transfer' || transactionType === 'payment') {
+      if (!toAccountId) newErrors.toAccountId = 'Destination account is required';
+    }
+    
+    if (!amount || parseFloat(amount) <= 0) newErrors.amount = 'Valid amount is required';
+    if (!date) newErrors.date = 'Date is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!accountId || !payeeName || !categoryId || !amount) {
-      alert('Please fill in all required fields');
+    if (!validateForm()) {
       return;
     }
 
     const amountNum = parseFloat(amount);
-    if (isNaN(amountNum)) {
-      alert('Please enter a valid amount');
-      return;
-    }
 
     try {
+      // Handle transfers and payments (both use the transfer mechanism)
+      if (transactionType === 'transfer' || transactionType === 'payment') {
+        if (!toAccountId) {
+          alert('Please select a destination account');
+          return;
+        }
+        if (accountId === toAccountId) {
+          alert('Cannot transfer to the same account');
+          return;
+        }
+
+        await createTransfer.mutateAsync({
+          date,
+          fromAccountId: accountId,
+          toAccountId: toAccountId,
+          amount: amountNum,
+          notes: notes || undefined,
+          isDebtPayment: transactionType === 'payment',
+        });
+
+        // Reset form
+        setAccountId(accounts[0]?.id || '');
+        setToAccountId('');
+        setAmount('');
+        setNotes('');
+        setDate(new Date().toISOString().split('T')[0]);
+        setTransactionType('expense');
+        setErrors({});
+
+        onClose();
+        return;
+      }
+
+      // Handle regular transactions (expense/income)
+      const finalAmount = transactionType === 'expense' ? -Math.abs(amountNum) : Math.abs(amountNum);
+
       // Create or get payee
       let payeeId = payees.find((p) => p.name === payeeName)?.id;
 
@@ -134,7 +264,7 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
         account_id: accountId,
         payee_id: payeeId,
         category_id: categoryId,
-        amount: amountNum,
+        amount: finalAmount,
         notes: notes || null,
         is_pending: false,
       });
@@ -145,6 +275,8 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
       setAmount('');
       setNotes('');
       setDate(new Date().toISOString().split('T')[0]);
+      setTransactionType('expense');
+      setErrors({});
 
       onClose();
     } catch (error) {
@@ -165,12 +297,20 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div className="relative bg-white rounded-xl shadow-xl max-w-2xl w-full p-6">
+          {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Quick Add Transaction</h2>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Quick Add Transaction</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                Press <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">I</kbd> for Income, 
+                <kbd className="ml-1 px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">E</kbd> for Expense,
+                <kbd className="ml-1 px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded text-xs">T</kbd> for Today
+              </p>
+            </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <span className="sr-only">Close</span>
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -179,46 +319,180 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Date */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date <span className="text-xs text-gray-500">(Press T for today)</span>
-              </label>
-              <input
-                ref={dateInputRef}
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                required
-              />
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Form - Left/Center Column */}
+            <div className="lg:col-span-2">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Transaction Type Buttons */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Transaction Type
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTransactionType('expense')}
+                      className={`px-4 py-2.5 rounded-lg font-medium transition-all ${
+                        transactionType === 'expense'
+                          ? 'bg-red-100 text-red-700 border-2 border-red-300 shadow-sm'
+                          : 'bg-gray-50 text-gray-600 border-2 border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-lg">💸</span>
+                        <span>Expense</span>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTransactionType('income')}
+                      className={`px-4 py-2.5 rounded-lg font-medium transition-all ${
+                        transactionType === 'income'
+                          ? 'bg-green-100 text-green-700 border-2 border-green-300 shadow-sm'
+                          : 'bg-gray-50 text-gray-600 border-2 border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-lg">💰</span>
+                        <span>Income</span>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTransactionType('transfer')}
+                      className={`px-4 py-2.5 rounded-lg font-medium transition-all ${
+                        transactionType === 'transfer'
+                          ? 'bg-blue-100 text-blue-700 border-2 border-blue-300 shadow-sm'
+                          : 'bg-gray-50 text-gray-600 border-2 border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-lg">↔️</span>
+                        <span>Transfer</span>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTransactionType('payment')}
+                      className={`px-4 py-2.5 rounded-lg font-medium transition-all ${
+                        transactionType === 'payment'
+                          ? 'bg-green-100 text-green-700 border-2 border-green-300 shadow-sm'
+                          : 'bg-gray-50 text-gray-600 border-2 border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-lg">💳</span>
+                        <span>Payment</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
 
-            {/* Account */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Account
-              </label>
-              <select
-                value={accountId}
-                onChange={(e) => setAccountId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                required
-              >
-                <option value="">Select account...</option>
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                {/* Date & Account Row */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <span className="flex items-center gap-1">
+                        📅 Date
+                      </span>
+                    </label>
+                    <input
+                      ref={dateInputRef}
+                      type="date"
+                      value={date}
+                      onChange={(e) => {
+                        setDate(e.target.value);
+                        if (errors.date) setErrors(prev => ({ ...prev, date: '' }));
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                        errors.date ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      required
+                    />
+                    {errors.date && <p className="text-xs text-red-600 mt-1">{errors.date}</p>}
+                  </div>
 
+                  {/* Account */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <span className="flex items-center gap-1">
+                        🏦 {transactionType === 'transfer' || transactionType === 'payment' ? 'From Account' : 'Account'}
+                      </span>
+                    </label>
+                    <select
+                      value={accountId}
+                      onChange={(e) => {
+                        setAccountId(e.target.value);
+                        if (errors.accountId) setErrors(prev => ({ ...prev, accountId: '' }));
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                        errors.accountId ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      required
+                    >
+                      <option value="">Select...</option>
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>
+                          {account.name} ({formatCurrency(account.current_balance || 0)})
+                        </option>
+                      ))}
+                    </select>
+                    {errors.accountId && <p className="text-xs text-red-600 mt-1">{errors.accountId}</p>}
+                  </div>
+                </div>
+
+                {/* For Transfers/Payments: Show To Account */}
+                {(transactionType === 'transfer' || transactionType === 'payment') && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <span className="flex items-center gap-1">
+                        🏦 {transactionType === 'payment' ? 'Pay To' : 'To Account'}
+                      </span>
+                    </label>
+                    <select
+                      value={toAccountId}
+                      onChange={(e) => {
+                        setToAccountId(e.target.value);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      required
+                    >
+                      <option value="">Select destination...</option>
+                      {accounts
+                        .filter(account => {
+                          // For payments, only show credit cards and mortgages (debt accounts)
+                          if (transactionType === 'payment') {
+                            const isDebtAccount = account.type === 'credit' || account.type === 'mortgage';
+                            const isDifferentAccount = account.id !== accountId;
+                            return isDebtAccount && isDifferentAccount;
+                          }
+                          // For transfers, show all accounts except the from account
+                          return account.id !== accountId;
+                        })
+                        .map((account) => (
+                          <option key={account.id} value={account.id}>
+                            {account.name} ({formatCurrency(account.current_balance || 0)})
+                          </option>
+                        ))}
+                      {transactionType === 'payment' && accounts.filter(a => 
+                        (a.type === 'credit' || a.type === 'mortgage') && a.id !== accountId
+                      ).length === 0 && (
+                        <option value="" disabled>No credit cards or mortgages available</option>
+                      )}
+                    </select>
+                  </div>
+                )}
+
+                {/* For Expense/Income: Show Payee and Category */}
+                {transactionType !== 'transfer' && transactionType !== 'payment' && (
+                  <>
             {/* Payee */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Payee
+                <span className="flex items-center gap-1">
+                  👤 Payee
+                </span>
               </label>
               <PayeeSuggestionInput
                 value={payeeName}
@@ -227,51 +501,65 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
                 required
                 autoFocus
               />
+              {errors.payeeName && <p className="text-xs text-red-600 mt-1">{errors.payeeName}</p>}
             </div>
 
             {/* Category */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
+                <span className="flex items-center gap-1">
+                  🏷️ Category
+                </span>
               </label>
-              <select
+              <CategorySuggestionInput
                 value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                onChange={(id) => {
+                  setCategoryId(id);
+                  if (errors.categoryId) setErrors(prev => ({ ...prev, categoryId: '' }));
+                }}
+                placeholder="Search or select category..."
                 required
-              >
-                <option value="">Select category...</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.path}
-                  </option>
-                ))}
-              </select>
+                error={errors.categoryId}
+              />
+              {errors.categoryId && <p className="text-xs text-red-600 mt-1">{errors.categoryId}</p>}
             </div>
+                  </>
+                )}
 
             {/* Amount */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Amount
+                <span className="flex items-center gap-1">
+                  💵 Amount
+                </span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-2 text-gray-500">$</span>
                 <input
+                  ref={amountInputRef}
                   type="number"
                   step="0.01"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  onChange={(e) => {
+                    setAmount(e.target.value);
+                    if (errors.amount) setErrors(prev => ({ ...prev, amount: '' }));
+                  }}
+                  className={`w-full pl-8 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                    errors.amount ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="0.00"
                   required
                 />
               </div>
+              {errors.amount && <p className="text-xs text-red-600 mt-1">{errors.amount}</p>}
             </div>
 
             {/* Notes */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notes <span className="text-gray-400">(optional)</span>
+                <span className="flex items-center gap-1">
+                  📝 Notes <span className="text-gray-400 font-normal">(optional)</span>
+                </span>
               </label>
               <input
                 type="text"
@@ -287,21 +575,106 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={createTransaction.isPending}
-                className="flex-1 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
+                disabled={createTransaction.isPending || createTransfer.isPending}
+                className="flex-1 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors font-medium"
               >
-                {createTransaction.isPending ? 'Saving...' : 'Add Transaction'}
+                {(createTransaction.isPending || createTransfer.isPending) 
+                  ? 'Saving...' 
+                  : transactionType === 'transfer' 
+                    ? 'Create Transfer'
+                    : transactionType === 'payment'
+                      ? 'Submit Payment'
+                      : 'Add Transaction'}
               </button>
             </div>
           </form>
         </div>
+
+        {/* Sidebar - Quick Actions & Recent */}
+        <div className="space-y-4">
+          {/* Quick Templates */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Quick Templates</h3>
+            <div className="space-y-2">
+              {QUICK_TEMPLATES.map((template) => (
+                <button
+                  key={template.name}
+                  type="button"
+                  onClick={() => applyTemplate(template)}
+                  className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 hover:border-gray-300 transition-colors text-left"
+                >
+                  <span className="text-lg">{template.icon}</span>
+                  <span className="flex-1 text-sm font-medium text-gray-700">{template.name}</span>
+                  <span className="text-sm text-gray-500">${template.amount}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Copy Previous */}
+          {recentTransactions.length > 0 && (
+            <div className="bg-blue-50 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Copy Previous</h3>
+              <button
+                type="button"
+                onClick={copyPreviousTransaction}
+                className="w-full px-3 py-2 bg-white border border-blue-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors text-left"
+              >
+                <div className="text-sm font-medium text-gray-900">
+                  {payees.find(p => p.id === recentTransactions[0].payee_id)?.name || 'Last Transaction'}
+                </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  {formatCurrency(recentTransactions[0].amount)}
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* Recent Transactions */}
+          {recentTransactions.length > 0 && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Recent</h3>
+              <div className="space-y-2">
+                {recentTransactions.slice(0, 5).map((tx) => {
+                  const account = accounts.find(a => a.id === tx.account_id);
+                  const payee = payees.find(p => p.id === tx.payee_id);
+                  return (
+                    <div
+                      key={tx.id}
+                      className="text-xs bg-white border border-gray-200 rounded p-2"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 truncate">
+                            {payee?.name || 'Unknown'}
+                          </div>
+                          <div className="text-gray-500 truncate">
+                            {account?.name || 'Unknown'}
+                          </div>
+                        </div>
+                        <div className={`font-semibold ml-2 ${tx.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {formatCurrency(tx.amount)}
+                        </div>
+                      </div>
+                      <div className="text-gray-400 mt-1">
+                        {formatDate(tx.date)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
+  </div>
+</div>
   );
 }

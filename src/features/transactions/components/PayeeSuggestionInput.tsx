@@ -84,6 +84,12 @@ export function PayeeSuggestionInput({
       setIsOpen(false);
       inputRef.current?.blur();
     }
+    
+    // If Enter is pressed and there's exactly one suggestion, select it
+    if (e.key === 'Enter' && displaySuggestions.length === 1) {
+      e.preventDefault();
+      handleSuggestionSelect(displaySuggestions[0]);
+    }
   };
 
   const displaySuggestions = searchTerm ? suggestions : topPayees;

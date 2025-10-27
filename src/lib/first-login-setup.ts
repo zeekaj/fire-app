@@ -94,6 +94,7 @@ const DEFAULT_CATEGORIES: CategorySeed[] = [
   { name: 'Gas', parent: 'Utilities' },
   { name: 'Internet', parent: 'Utilities' },
   { name: 'Phone', parent: 'Utilities' },
+  { name: 'Cell Phone', parent: 'Utilities' },
   { name: 'Trash', parent: 'Utilities' },
 
   // Healthcare
