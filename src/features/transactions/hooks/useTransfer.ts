@@ -105,6 +105,7 @@ export function useCreateTransfer() {
       // Invalidate queries to refetch
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['account-transactions'] }); // Invalidate account register queries
     },
   });
 }
@@ -148,6 +149,7 @@ export function useDeleteTransfer() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['account-transactions'] }); // Invalidate account register queries
     },
   });
 }

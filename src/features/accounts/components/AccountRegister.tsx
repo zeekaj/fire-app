@@ -20,6 +20,9 @@ interface AccountRegisterProps {
 export function AccountRegister({ account, onClose }: AccountRegisterProps) {
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
+  // Determine if this is a liability account (credit cards, mortgages, loans)
+  const isLiability = ['credit', 'mortgage'].includes(account.type);
+
   // Fetch transactions for this account with related data
   const { data: accountTransactions = [] } = useQuery({
     queryKey: ['account-transactions', account.id],
@@ -44,9 +47,11 @@ export function AccountRegister({ account, onClose }: AccountRegisterProps) {
   });
 
   // Calculate running balance
+  // For liabilities: negative amounts (charges) increase balance, positive amounts (payments) decrease balance
+  // For assets: amounts work as-is (positive increases, negative decreases)
   let runningBalance = account.opening_balance || 0;
   const transactionsWithBalance = accountTransactions.map(tx => {
-    runningBalance += tx.amount;
+    runningBalance += isLiability ? -tx.amount : tx.amount;
     return {
       ...tx,
       runningBalance,
@@ -99,10 +104,10 @@ export function AccountRegister({ account, onClose }: AccountRegisterProps) {
                       Type
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Payment
+                      {isLiability ? 'Charge' : 'Expense'}
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Deposit
+                      Payment
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Balance
@@ -163,9 +168,11 @@ export function AccountRegister({ account, onClose }: AccountRegisterProps) {
                           {tx.category?.name || '—'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-red-600 font-medium">
+                          {/* Negative amounts = expenses/charges (money out for assets, debt increase for liabilities) */}
                           {tx.amount < 0 ? formatCurrency(Math.abs(tx.amount)) : '—'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-green-600 font-medium">
+                          {/* Positive amounts = payments/income (money in for assets, debt reduction for liabilities) */}
                           {tx.amount > 0 ? formatCurrency(tx.amount) : '—'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold text-gray-900">
@@ -186,7 +193,7 @@ export function AccountRegister({ account, onClose }: AccountRegisterProps) {
             </div>
             <div className="flex gap-6">
               <div>
-                <span className="text-gray-600">Total Payments: </span>
+                <span className="text-gray-600">Total {isLiability ? 'Charges' : 'Expenses'}: </span>
                 <span className="font-semibold text-red-600">
                   {formatCurrency(
                     transactionsWithBalance.reduce((sum, tx) => sum + (tx.amount < 0 ? Math.abs(tx.amount) : 0), 0)
@@ -194,7 +201,7 @@ export function AccountRegister({ account, onClose }: AccountRegisterProps) {
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">Total Deposits: </span>
+                <span className="text-gray-600">Total Payments: </span>
                 <span className="font-semibold text-green-600">
                   {formatCurrency(
                     transactionsWithBalance.reduce((sum, tx) => sum + (tx.amount > 0 ? tx.amount : 0), 0)

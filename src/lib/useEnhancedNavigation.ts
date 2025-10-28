@@ -5,9 +5,9 @@
  * Tracks navigation history and provides contextual breadcrumb information.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 
-export type AppTab = 'dashboard' | 'scenarios' | 'budgets' | 'bills' | 'accounts' | 'transactions' | 'categories' | 'profile';
+export type AppTab = 'dashboard' | 'analytics' | 'scenarios' | 'budgets' | 'bills' | 'accounts' | 'transactions' | 'categories' | 'profile';
 
 export interface NavigationState {
   activeTab: AppTab;
@@ -22,13 +22,32 @@ export interface BreadcrumbItem {
   isActive?: boolean;
 }
 
+const STORAGE_KEY = 'fire-app-active-tab';
+
 /**
  * Enhanced navigation hook with breadcrumbs and history
  */
 export function useEnhancedNavigation() {
-  const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
+  // Restore active tab from localStorage, fallback to dashboard
+  const [activeTab, setActiveTab] = useState<AppTab>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return (saved as AppTab) || 'dashboard';
+    } catch {
+      return 'dashboard';
+    }
+  });
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
-  const [navigationHistory, setNavigationHistory] = useState<AppTab[]>(['dashboard']);
+  const [navigationHistory, setNavigationHistory] = useState<AppTab[]>([activeTab]);
+
+  // Persist active tab to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, activeTab);
+    } catch (error) {
+      // Ignore localStorage errors (e.g., in private browsing)
+    }
+  }, [activeTab]);
 
   const navigateToTab = useCallback((tab: AppTab, options?: { 
     resetScenario?: boolean;
@@ -75,6 +94,7 @@ export function useEnhancedNavigation() {
     if (activeTab !== 'dashboard') {
       const tabLabels: Record<AppTab, string> = {
         dashboard: 'Dashboard',
+        analytics: 'Analytics',
         scenarios: 'Scenarios',
         budgets: 'Budgets',
         bills: 'Bills',

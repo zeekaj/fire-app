@@ -25,12 +25,18 @@ export function useTransactions(limit = 50) {
         .from('transactions')
         .select('*')
         .eq('created_by', userId as any)
-        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(limit);
 
       if (error) throw error;
       return data as unknown as Transaction[];
     },
+    // Always consider data stale so it refetches
+    staleTime: 0,
+    // Refetch when component mounts
+    refetchOnMount: 'always',
+    // Don't keep data in cache (for limit=5 case)
+    gcTime: limit === 5 ? 0 : 5 * 60 * 1000, // 0 for recent transactions, 5 min for others
   });
 }
 
@@ -49,10 +55,11 @@ export function useCreateTransaction() {
       };
       return await insertWithOwnership('transactions', transactionWithType);
     },
-    onSuccess: () => {
-      // Invalidate queries to refetch
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    onSuccess: async () => {
+      // Remove cached data and refetch
+      queryClient.removeQueries({ queryKey: ['transactions'] });
+      await queryClient.refetchQueries({ queryKey: ['transactions'] });
+      await queryClient.refetchQueries({ queryKey: ['accounts'] });
     },
   });
 }
@@ -81,6 +88,7 @@ export function useUpdateTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['account-transactions'] }); // Invalidate account register queries
     },
   });
 }
@@ -106,6 +114,7 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['account-transactions'] }); // Invalidate account register queries
     },
   });
 }

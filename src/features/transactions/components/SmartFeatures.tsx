@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Database } from '../../../lib/database.types';
 import { formatCurrency, formatDate } from '../../../lib/format';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 type Payee = Database['public']['Tables']['payees']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
+
+const DISMISSED_SECTIONS_KEY = 'fire-app-dismissed-smart-features';
 
 interface SmartFeaturesProps {
   transactions: Transaction[];
@@ -40,6 +42,29 @@ interface AutoCategorizeRule {
 }
 
 export function SmartFeatures({ transactions, payees, categories }: SmartFeaturesProps) {
+  // Track dismissed sections with localStorage persistence
+  const [dismissedSections, setDismissedSections] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem(DISMISSED_SECTIONS_KEY);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  // Persist dismissed sections to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(DISMISSED_SECTIONS_KEY, JSON.stringify([...dismissedSections]));
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [dismissedSections]);
+
+  const dismissSection = (section: string) => {
+    setDismissedSections(prev => new Set([...prev, section]));
+  };
+
   // Helper to get leaf category name from path
   const getCategoryLeafName = (category: Category) => {
     if (category.path) {
@@ -226,14 +251,25 @@ export function SmartFeatures({ transactions, payees, categories }: SmartFeature
   return (
     <div className="space-y-6">
       {/* Duplicate Detection */}
-      {duplicates.length > 0 && (
+      {duplicates.length > 0 && !dismissedSections.has('duplicates') && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
           <div className="flex items-start gap-3">
             <div className="text-2xl">⚠️</div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-yellow-900 mb-2">
-                Possible Duplicate Transactions
-              </h3>
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-lg font-semibold text-yellow-900">
+                  Possible Duplicate Transactions
+                </h3>
+                <button
+                  onClick={() => dismissSection('duplicates')}
+                  className="text-yellow-600 hover:text-yellow-800 transition-colors"
+                  title="Dismiss"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
               <p className="text-sm text-yellow-700 mb-4">
                 Found {duplicates.length} group{duplicates.length !== 1 ? 's' : ''} of transactions that might be duplicates
               </p>
@@ -255,14 +291,25 @@ export function SmartFeatures({ transactions, payees, categories }: SmartFeature
       )}
 
       {/* Recurring Patterns */}
-      {recurringPatterns.length > 0 && (
+      {recurringPatterns.length > 0 && !dismissedSections.has('recurring') && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
           <div className="flex items-start gap-3">
             <div className="text-2xl">🔄</div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                Recurring Transaction Patterns
-              </h3>
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-lg font-semibold text-blue-900">
+                  Recurring Transaction Patterns
+                </h3>
+                <button
+                  onClick={() => dismissSection('recurring')}
+                  className="text-blue-600 hover:text-blue-800 transition-colors"
+                  title="Dismiss"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
               <p className="text-sm text-blue-700 mb-4">
                 Detected {recurringPatterns.length} recurring pattern{recurringPatterns.length !== 1 ? 's' : ''}
               </p>
@@ -291,14 +338,25 @@ export function SmartFeatures({ transactions, payees, categories }: SmartFeature
       )}
 
       {/* Auto-Categorization Suggestions */}
-      {autoCategorizeRules.length > 0 && (
+      {autoCategorizeRules.length > 0 && !dismissedSections.has('autocategorize') && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-6">
           <div className="flex items-start gap-3">
             <div className="text-2xl">✨</div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-green-900 mb-2">
-                Auto-Categorization Rules
-              </h3>
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-lg font-semibold text-green-900">
+                  Auto-Categorization Rules
+                </h3>
+                <button
+                  onClick={() => dismissSection('autocategorize')}
+                  className="text-green-600 hover:text-green-800 transition-colors"
+                  title="Dismiss"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
               <p className="text-sm text-green-700 mb-4">
                 Based on your transaction history, these payees consistently use specific categories
               </p>

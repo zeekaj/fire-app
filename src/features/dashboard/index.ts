@@ -8,6 +8,7 @@ export { SpendingTrendsChart } from './components/SpendingTrendsChart';
 export { CategoryBreakdownChart } from './components/CategoryBreakdownChart';
 export { UpcomingBillsWidget } from './components/UpcomingBillsWidget';
 export { InvestmentReminders, InvestmentRemindersTile } from './components/InvestmentReminders';
+export { FinancialAnalytics } from './components/FinancialAnalytics';
 export { useDashboardMetrics } from './hooks/useDashboardMetrics';
 export { useInvestmentReminders } from './hooks/useInvestmentReminders';
 export { useDismissReminder } from './hooks/useDismissReminder';

@@ -29,14 +29,6 @@ interface QuickAddTransactionProps {
 
 type TransactionType = 'expense' | 'income' | 'transfer' | 'payment';
 
-// Common transaction templates
-const QUICK_TEMPLATES = [
-  { name: 'Coffee', amount: 5, icon: '☕' },
-  { name: 'Lunch', amount: 15, icon: '🍽️' },
-  { name: 'Gas', amount: 50, icon: '⛽' },
-  { name: 'Groceries', amount: 100, icon: '🛒' },
-];
-
 export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProps) {
   const { data: accounts = [] } = useAccounts();
   const { data: payees = [] } = usePayees();
@@ -67,7 +59,16 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
     }
   }, [accounts, accountId]);
 
-  // The PayeeSuggestionInput handles its own autoFocus
+  // Auto-focus date input when modal opens
+  useEffect(() => {
+    if (isOpen && dateInputRef.current) {
+      // Small delay to ensure modal is rendered
+      setTimeout(() => {
+        dateInputRef.current?.focus();
+        dateInputRef.current?.select();
+      }, 100);
+    }
+  }, [isOpen]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -154,24 +155,6 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
     if (payee) {
       setPayeeName(payee.name);
     }
-  };
-
-  // Apply quick template
-  const applyTemplate = (template: typeof QUICK_TEMPLATES[0]) => {
-    setPayeeName(template.name);
-    setAmount(template.amount.toString());
-    setTransactionType('expense');
-    
-    // Try to find matching payee
-    const matchingPayee = payees.find(
-      p => p.name.toLowerCase() === template.name.toLowerCase()
-    );
-    if (matchingPayee && matchingPayee.default_category_id) {
-      setCategoryId(matchingPayee.default_category_id);
-    }
-    
-    // Focus amount for easy adjustment
-    setTimeout(() => amountInputRef.current?.select(), 100);
   };
 
   // Validate form
@@ -598,25 +581,6 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
 
         {/* Sidebar - Quick Actions & Recent */}
         <div className="space-y-4">
-          {/* Quick Templates */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Quick Templates</h3>
-            <div className="space-y-2">
-              {QUICK_TEMPLATES.map((template) => (
-                <button
-                  key={template.name}
-                  type="button"
-                  onClick={() => applyTemplate(template)}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 hover:border-gray-300 transition-colors text-left"
-                >
-                  <span className="text-lg">{template.icon}</span>
-                  <span className="flex-1 text-sm font-medium text-gray-700">{template.name}</span>
-                  <span className="text-sm text-gray-500">${template.amount}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Copy Previous */}
           {recentTransactions.length > 0 && (
             <div className="bg-blue-50 rounded-lg p-4">

@@ -88,6 +88,10 @@ export function CategorySuggestionInput({
     }
 
     switch (e.key) {
+      case 'Tab':
+        // Close dropdown and allow normal tab navigation
+        setShowDropdown(false);
+        break;
       case 'ArrowDown':
         e.preventDefault();
         setHighlightedIndex(prev => 
@@ -228,7 +232,7 @@ export function CategorySuggestionInput({
                 return (
                   <div key={groupName}>
                     {/* Group Header */}
-                    <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
+                    <div className="px-3 py-2 bg-gray-100 border-b border-gray-300">
                       <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                         {groupName}
                       </div>
@@ -246,6 +250,7 @@ export function CategorySuggestionInput({
                           key={category.id}
                           type="button"
                           onClick={() => selectCategory(category)}
+                          tabIndex={-1}
                           className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
                             isHighlighted
                               ? 'bg-primary text-white'
@@ -276,6 +281,7 @@ export function CategorySuggestionInput({
                 type="button"
                 onClick={handleCreateCategory}
                 disabled={isCreating}
+                tabIndex={-1}
                 className="w-full text-left px-4 py-3 text-sm text-primary hover:bg-blue-50 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="text-lg">➕</span>

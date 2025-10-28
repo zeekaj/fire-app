@@ -8,8 +8,10 @@ import { useEffect, useState } from 'react';
 import { runFirstLoginSetup } from './lib/first-login-setup';
 import { useEnhancedNavigation } from './lib/useEnhancedNavigation';
 import { logger } from './lib/logger';
+import './lib/fix-account-type'; // Utility for fixing account types (available in console)
 import { useAuth } from './app/providers/AuthProvider';
 import { Dashboard } from './features/dashboard/components/Dashboard';
+import { FinancialAnalytics } from './features/dashboard/components/FinancialAnalytics';
 import { MonthlyBudgets } from './features/budgets/components/MonthlyBudgets';
 import { AccountsList } from './features/accounts';
 import { QuickAddTransaction } from './features/transactions/components/QuickAddTransaction';
@@ -83,6 +85,8 @@ function App() {
     switch (navigation.activeTab) {
       case 'dashboard':
         return <Dashboard onNavigate={navigation.navigateToTab} />;
+      case 'analytics':
+        return <FinancialAnalytics />;
       case 'accounts':
         return <AccountsList />;
       case 'transactions':
