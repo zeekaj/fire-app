@@ -58,7 +58,29 @@ docs/
 
 ## 🎯 Current Project Status
 
-### ✅ Latest Updates (October 28, 2025)
+### ✅ Latest Updates (November 3, 2025)
+Net Worth & Analytics polish
+- Net Worth History
+	- Added Backfill button in the chart header (parity with empty state)
+	- Labeled Snapshot and Backfill buttons (icon + text) with accessibility labels
+	- Contextual help on the header (click title for tips); new “net-worth” help topic
+	- Shows “Last snapshot” date beneath the subtitle; auto-updates after actions
+- Analytics: Debt Payments
+	- Excludes credit card payoffs from “Debt Payments” to avoid double-counting (purchases are already expenses)
+	- Applied to type breakdown, monthly trends, debt payment progress, and summary stats
+
+### ✅ Prior Updates (November 2, 2025)
+**Net Worth History & Snapshots (Shipped)**
+- Interactive Net Worth chart with quick date ranges (3M, 6M, 1Y, 2Y, ALL)
+- Toggle breakdown view to see Assets vs Liabilities stacked over time
+- One-click actions:
+	- Take Snapshot: save today's net worth (idempotent per day)
+	- Generate Historical Data: backfill monthly snapshots across the selected range
+- Summary stats under the chart: Current, Absolute Change, and % Growth
+
+Use the Dashboard → Net Worth History section to explore your trajectory and save history.
+
+### ✅ Previous Updates (October 28, 2025)
 **UX Improvements & Polish**
 - **Liability Account Fixes** - Credit cards and mortgages display correctly (charges/payments inverted)
 - **Custom Date Range Filter** - Filter transactions by any date range
@@ -138,7 +160,7 @@ This documentation index is the authoritative reference for all current document
 
 ---
 
-**Last Updated:** October 28, 2025  
+**Last Updated:** November 3, 2025  
 **Maintained By:** Development Team  
 **Questions?** Open an issue or check the [Issues Modal](../../src/components/IssuesModal.tsx) in the app.
 
@@ -149,5 +171,5 @@ This documentation is actively maintained. If you notice outdated information:
 
 ---
 
-*Last Updated: October 22, 2025*  
+*Last Updated: November 3, 2025*  
 *Current Version: Phase D Complete + Critical Bug Fixes*

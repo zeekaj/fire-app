@@ -28,6 +28,26 @@ interface HelpContent {
 
 // Help content database
 const helpContent: Record<string, HelpContent> = {
+  'net-worth': {
+    title: 'Net Worth History & Snapshots',
+    description: 'See how your net worth changes over time. Snapshots capture today’s assets and liabilities; Backfill generates historical points from your transaction history.',
+    tips: [
+      'Use Snapshot to save today’s net worth after updating account balances',
+      'Backfill monthly to populate the chart from past transactions',
+      'Switch between Net Worth and Assets/Liabilities breakdown',
+    ],
+    relatedTopics: ['accounts', 'transactions', 'dashboard'],
+    commonIssues: [
+      {
+        issue: 'No data shown',
+        solution: 'Take your first snapshot or use Backfill to generate history from transactions',
+      },
+      {
+        issue: 'Totals look off',
+        solution: 'Confirm account opening balances and recent transactions are accurate',
+      },
+    ],
+  },
   'dashboard': {
     title: 'Dashboard Overview',
     description: 'Your financial independence dashboard shows key metrics and progress toward your FIRE goals.',

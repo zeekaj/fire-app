@@ -36,6 +36,12 @@ The dashboard shows intelligent alerts for:
 - **Low Investment Allocation** - If too much money is sitting in cash
 
 ### Charts & Analytics
+- **Net Worth History**
+   - Quick ranges: 3M, 6M, 1Y, 2Y, ALL
+   - Views: Net Worth line or Assets/Liabilities breakdown
+   - Actions: Snapshot (save today’s net worth), Backfill (generate historical monthly points)
+   - “Last snapshot” shows your most recent snapshot date and updates after actions
+   - Tip: Click the “Net Worth History” title for contextual help
 - **Monte Carlo Distribution** - Probability curves for different outcomes
 - **Historical Performance** - How your strategy would have performed historically
 - **Scenario Comparison** - Compare multiple FIRE strategies side-by-side
@@ -136,6 +142,12 @@ The app learns from your transaction history to provide:
 - **Budget integration** - Categories link to budget targets
 - **Custom categories** - Create categories that fit your lifestyle
 - **Transfer handling** - Mark categories as transfers to avoid double-counting
+
+### Debt Payments Accounting
+- Credit card payoffs are excluded from “Debt Payments” analytics to avoid double-counting purchases (which are expenses).
+- Loan/mortgage payments are still counted as debt payments.
+- Transfers marked as “Debt Payment” will appear in analytics; payoffs to credit card accounts are filtered out.
+- Where this applies: Financial Analytics (type breakdown, monthly trends, debt payment progress, summary stats) and Transaction Analytics.
 
 ---
 
@@ -310,4 +322,4 @@ Your financial data is protected with enterprise-grade security.
 
 ---
 
-*Last updated: October 2025*
+*Last updated: November 2025*

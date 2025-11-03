@@ -4,10 +4,28 @@
 
 ### Smart UX Enhancements ✅
 - **Smart Payee Suggestions** - Intelligent autocomplete with usage analytics
+- **Keyboard Navigation for Payees** - Arrow key selection in all add modals with ARIA support
 - **Investment Reminders** - Portfolio monitoring with 5 alert types
 - **Enhanced Navigation** - Mobile-first design with breadcrumbs and improved UX
 - **Issues/Help System** - Comprehensive user support with contextual help
 - **Database Optimization** - Dedicated age columns for better performance
+
+### Register Reliability & Polish ✅
+- **Deterministic Running Balance** - Compute on chronological order (date, then created_at) to fix same-day ordering issues
+- **Inline Opening Balance Edit** - Pencil action from the register header and beginning balance row; immediate recompute via cache invalidation
+
+### Account Enhancements ✅
+- **Credit Card Account Details** - Interest rate, payment due date, statement close date, credit limit tracking
+- **Mortgage Account Details** - Interest rate, loan term, original amount, property address, escrow, payment tracking
+- **Account Register Display** - Rich account details visible in register view with auto-calculated next payment dates
+
+---
+
+## ✅ Recently Completed (November 2025)
+
+### Analytics & Net Worth Polish
+- **Debt Payments Analytics Fix** - Exclude credit card payoffs from “Debt Payments” to avoid double-counting purchases; continue to count loan/mortgage payments
+- **Net Worth History UX** - Backfill button added to header; Snapshot/Backfill buttons labeled with accessibility; contextual help on title; “Last snapshot” date shown and auto-updated after actions
 
 ---
 
@@ -17,10 +35,11 @@
 **Priority: High** | **Timeline: Next Quarter**
 
 #### 📊 Advanced Dashboard Analytics
-- **Spending Trends Analysis** - Deep insights into spending patterns
-- **Income vs Expenses Tracking** - Monthly/yearly comparisons
-- **Category-wise Budget Performance** - Detailed budget vs actual analysis
-- **Savings Rate Optimization** - Recommendations for improving savings rate
+- **Spending Trends Analysis ✅** - Deep insights into spending patterns with category-level trend analysis
+- **Income vs Expenses Tracking ✅** - Last 12 months aggregation, YTD totals, dashboard chart with monthly breakdown
+- **Net Worth History & Snapshots ✅** - Interactive chart with date ranges, breakdown toggle, snapshot/backfill actions
+- **Category-wise Budget Performance ✅** - Category-level budget tracking with visual progress indicators and status badges
+- **Savings Rate Optimization ✅** - Personalized recommendations to improve savings rate based on spending patterns and category analysis
 
 #### 📈 Enhanced FIRE Projections
 - **Scenario Stress Testing** - Market crash simulations
@@ -138,5 +157,5 @@ While this is primarily a single-user application, we appreciate feedback and su
 
 ---
 
-*Last Updated: October 2025*  
-*Current Version: Phase D Complete*
+*Last Updated: November 2025*  
+*Current Version: Phase D Complete + Phase E (Analytics) in progress*

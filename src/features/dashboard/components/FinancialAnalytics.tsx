@@ -7,6 +7,7 @@
 
 import { useMemo, useState } from 'react';
 import { useTransactions } from '@/features/transactions/hooks/useTransactions';
+import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { useCategories } from '@/features/transactions/hooks/useCategories';
 import { formatCurrency } from '@/lib/format';
 import {
@@ -31,6 +32,14 @@ export function FinancialAnalytics() {
   const [timeRange, setTimeRange] = useState<TimeRange>('6m');
   const { data: allTransactions = [] } = useTransactions(1000);
   const { data: categories = [] } = useCategories();
+  const { data: accounts = [] } = useAccounts();
+
+  // Build accounts map for quick lookups
+  const accountsById = useMemo(() => {
+    const map = new Map<string, { id: string; type: string }>();
+    accounts.forEach(a => map.set(a.id, { id: a.id, type: a.type }));
+    return map;
+  }, [accounts]);
 
   // Filter transactions by time range
   const transactions = useMemo(() => {
@@ -59,9 +68,24 @@ export function FinancialAnalytics() {
 
   // Calculate transaction type breakdown
   const typeBreakdown = useMemo(() => {
-    const expenses = transactions.filter(tx => tx.transaction_type === 'expense').reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
-    const income = transactions.filter(tx => tx.transaction_type === 'income').reduce((sum, tx) => sum + tx.amount, 0);
-    const debtPayments = transactions.filter(tx => tx.transaction_type === 'debt_payment').reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+    const expenses = transactions
+      .filter(tx => tx.transaction_type === 'expense')
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+
+    const income = transactions
+      .filter(tx => tx.transaction_type === 'income')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    // Only count non-credit debt payments (withdrawals), exclude credit card payoffs to avoid double counting
+    const isCreditAccount = (accountType?: string) => ['credit', 'credit_card'].includes(accountType || '');
+    const debtPaymentWithdrawals = transactions.filter(
+      tx => tx.transaction_type === 'debt_payment' && tx.amount < 0
+    ).filter(tx => {
+      const paired = transactions.find(t => t.id === tx.transfer_id);
+      const pairedAccountType = paired ? accountsById.get(paired.account_id)?.type : undefined;
+      return !isCreditAccount(pairedAccountType);
+    });
+    const debtPayments = debtPaymentWithdrawals.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
     return [
       { name: 'Expenses', value: expenses, color: '#EF4444' },
@@ -91,7 +115,14 @@ export function FinancialAnalytics() {
       } else if (tx.transaction_type === 'expense') {
         data.expenses += Math.abs(tx.amount);
       } else if (tx.transaction_type === 'debt_payment') {
-        data.debtPayments += Math.abs(tx.amount);
+        // Count only withdrawals that are not credit card payments
+        if (tx.amount < 0) {
+          const paired = transactions.find(t => t.id === tx.transfer_id);
+          const pairedAccountType = paired ? accountsById.get(paired.account_id)?.type : undefined;
+          if (!['credit', 'credit_card'].includes(pairedAccountType || '')) {
+            data.debtPayments += Math.abs(tx.amount);
+          }
+        }
       }
     });
 
@@ -131,13 +162,17 @@ export function FinancialAnalytics() {
 
   // Calculate debt payment stats
   const debtStats = useMemo(() => {
-    const debtTxs = transactions.filter(tx => tx.transaction_type === 'debt_payment');
+    // Use only withdrawal side of non-credit debt payments
+    const debtTxs = transactions.filter(tx => tx.transaction_type === 'debt_payment' && tx.amount < 0).filter(tx => {
+      const paired = transactions.find(t => t.id === tx.transfer_id);
+      const pairedType = paired ? accountsById.get(paired.account_id)?.type : undefined;
+      return !['credit', 'credit_card'].includes(pairedType || '');
+    });
     const total = debtTxs.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
-    const count = debtTxs.length / 2; // Divide by 2 since each payment has 2 records
+    const count = debtTxs.length; // one withdrawal per payment
 
     const monthlyPayments = new Map<string, number>();
     debtTxs.forEach(tx => {
-      if (tx.amount >= 0) return; // Only count withdrawals
       const date = new Date(tx.date);
       const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
       monthlyPayments.set(monthKey, (monthlyPayments.get(monthKey) || 0) + Math.abs(tx.amount));
@@ -155,7 +190,14 @@ export function FinancialAnalytics() {
   const stats = useMemo(() => {
     const totalIncome = transactions.filter(tx => tx.transaction_type === 'income').reduce((sum, tx) => sum + tx.amount, 0);
     const totalExpenses = transactions.filter(tx => tx.transaction_type === 'expense').reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
-    const totalDebtPayments = transactions.filter(tx => tx.transaction_type === 'debt_payment' && tx.amount < 0).reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+    const totalDebtPayments = transactions
+      .filter(tx => tx.transaction_type === 'debt_payment' && tx.amount < 0)
+      .filter(tx => {
+        const paired = transactions.find(t => t.id === tx.transfer_id);
+        const pairedType = paired ? accountsById.get(paired.account_id)?.type : undefined;
+        return !['credit', 'credit_card'].includes(pairedType || '');
+      })
+      .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
     const netSavings = totalIncome - totalExpenses - totalDebtPayments;
     const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0;
 
@@ -168,7 +210,7 @@ export function FinancialAnalytics() {
       avgMonthlyIncome: totalIncome / Math.max(monthlyData.length, 1),
       avgMonthlyExpenses: totalExpenses / Math.max(monthlyData.length, 1),
     };
-  }, [transactions, monthlyData]);
+  }, [transactions, monthlyData, accountsById]);
 
   const timeRangeOptions: { value: TimeRange; label: string }[] = [
     { value: '3m', label: '3 Months' },
