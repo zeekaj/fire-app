@@ -7,6 +7,11 @@
 import { DashboardTile } from './DashboardTile';
 import { ProjectedTimeToFICard } from './ProjectedTimeToFICard';
 import { DashboardInsights } from './DashboardInsights';
+import { SpendingTrendsChart } from './SpendingTrendsChart';
+import { NetWorthHistoryChart } from './NetWorthHistoryChart';
+import { IncomeExpensesChart } from './IncomeExpensesChart';
+import { BudgetPerformanceChart } from '@/features/budgets';
+import { SavingsRateOptimization } from './SavingsRateOptimization';
 import { InvestmentRemindersTile } from './InvestmentReminders';
 import { useDashboardMetrics } from '../hooks/useDashboardMetrics';
 import { formatCurrency } from '@/lib/format';
@@ -77,6 +82,29 @@ export function Dashboard({ onNavigate }: DashboardProps = {}) {
       {/* Smart Insights Panel - Full Width */}
       <div className="mt-6">
         <DashboardInsights />
+      </div>
+
+      {/* Income vs Expenses Chart - Full Width */}
+      <div className="mt-6">
+        <IncomeExpensesChart />
+      </div>
+
+      {/* Budget Performance - Full Width */}
+      <div className="mt-6">
+        <BudgetPerformanceChart />
+      </div>
+
+      {/* Savings Rate Optimization - Full Width */}
+      <div className="mt-6">
+        <SavingsRateOptimization />
+      </div>
+
+      {/* Net Worth History Chart - Full Width */}
+      <div className="mt-6">
+        <NetWorthHistoryChart />
+      </div>      {/* Spending Trends - Full Width */}
+      <div className="mt-6">
+        <SpendingTrendsChart />
       </div>
 
       {/* Investment Reminders - Full Width */}

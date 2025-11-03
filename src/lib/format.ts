@@ -11,8 +11,14 @@
  * @example
  * formatCurrency(1234.56) // "$1,234.56"
  * formatCurrency(-145.23) // "- $145.23"
+ * formatCurrency(1500000, { compact: true }) // "$1.5M"
  */
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number, options?: { compact?: boolean }): string {
+  // Use compact format if requested
+  if (options?.compact) {
+    return formatCompact(amount);
+  }
+
   const isNegative = amount < 0;
   const absAmount = Math.abs(amount);
   

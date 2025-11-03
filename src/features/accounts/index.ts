@@ -4,6 +4,7 @@
 
 // Components
 export { AccountsList } from './components/AccountsList';
+export { AccountsWorkspace } from './components/AccountsWorkspace';
 export { AccountCard } from './components/AccountCard';
 export { AddAccountModal } from './components/AddAccountModal';
 export { EditAccountModal } from './components/EditAccountModal';

@@ -47,7 +47,9 @@ export function useUpdateAccount() {
       return data;
     },
     onSuccess: () => {
+      // Opening balance or name/group changes should refresh related data
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['account-transactions'] });
     },
   });
 }

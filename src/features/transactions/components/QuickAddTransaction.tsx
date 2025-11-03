@@ -25,11 +25,17 @@ import { formatCurrency, formatDate } from '@/lib/format';
 interface QuickAddTransactionProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Optional defaults when opening from context (e.g., account register) */
+  defaultAccountId?: string;
+  defaultType?: 'expense' | 'income' | 'transfer' | 'payment';
+  defaultToAccountId?: string;
+  /** If true, hide/lock the account selector to the provided defaultAccountId */
+  lockAccountSelection?: boolean;
 }
 
 type TransactionType = 'expense' | 'income' | 'transfer' | 'payment';
 
-export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProps) {
+export function QuickAddTransaction({ isOpen, onClose, defaultAccountId, defaultType, defaultToAccountId, lockAccountSelection }: QuickAddTransactionProps) {
   const { data: accounts = [] } = useAccounts();
   const { data: payees = [] } = usePayees();
   const { data: recentTransactions = [] } = useTransactions(5);
@@ -49,17 +55,25 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
   // Transfer/Payment-specific state
   const [toAccountId, setToAccountId] = useState('');
 
+  // When opened from an account context, lock the account selection to that account
+  const isAccountLocked = !!lockAccountSelection || !!defaultAccountId;
+
   const dateInputRef = useRef<HTMLInputElement>(null);
   const amountInputRef = useRef<HTMLInputElement>(null);
 
   // Set default account when accounts load
   useEffect(() => {
-    if (accounts.length > 0 && !accountId) {
+    if (accounts.length === 0) return;
+    if (defaultAccountId) {
+      setAccountId(defaultAccountId);
+      return;
+    }
+    if (!accountId) {
       setAccountId(accounts[0].id);
     }
-  }, [accounts, accountId]);
+  }, [accounts, accountId, defaultAccountId]);
 
-  // Auto-focus date input when modal opens
+  // Auto-focus and apply default type/to-account when modal opens
   useEffect(() => {
     if (isOpen && dateInputRef.current) {
       // Small delay to ensure modal is rendered
@@ -67,6 +81,12 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
         dateInputRef.current?.focus();
         dateInputRef.current?.select();
       }, 100);
+    }
+    if (isOpen && defaultType) {
+      setTransactionType(defaultType);
+    }
+    if (isOpen && defaultToAccountId) {
+      setToAccountId(defaultToAccountId);
     }
   }, [isOpen]);
 
@@ -125,7 +145,7 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
       if (suggestion.default_category_id) {
         setCategoryId(suggestion.default_category_id);
       }
-      if (suggestion.default_account_id && !accountId) {
+      if (suggestion.default_account_id && !accountId && !isAccountLocked) {
         setAccountId(suggestion.default_account_id);
       }
     } else {
@@ -145,7 +165,9 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
     if (recentTransactions.length === 0) return;
     
     const lastTx = recentTransactions[0];
-    setAccountId(lastTx.account_id);
+    if (!isAccountLocked) {
+      setAccountId(lastTx.account_id);
+    }
     setCategoryId(lastTx.category_id || '');
     setAmount(Math.abs(lastTx.amount).toString());
     setTransactionType(lastTx.amount < 0 ? 'expense' : 'income');
@@ -306,6 +328,62 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
             {/* Main Form - Left/Center Column */}
             <div className="lg:col-span-2">
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Date & Account Row */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <span className="flex items-center gap-1">
+                        📅 Date
+                      </span>
+                    </label>
+                    <input
+                      ref={dateInputRef}
+                      type="date"
+                      value={date}
+                      onChange={(e) => {
+                        setDate(e.target.value);
+                        if (errors.date) setErrors(prev => ({ ...prev, date: '' }));
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                        errors.date ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      required
+                    />
+                    {errors.date && <p className="text-xs text-red-600 mt-1">{errors.date}</p>}
+                  </div>
+
+                  {/* Account selector omitted entirely when locked */}
+                  {!isAccountLocked && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <span className="flex items-center gap-1">
+                          🏦 {transactionType === 'transfer' || transactionType === 'payment' ? 'From Account' : 'Account'}
+                        </span>
+                      </label>
+                      <select
+                        value={accountId}
+                        onChange={(e) => {
+                          setAccountId(e.target.value);
+                          if (errors.accountId) setErrors(prev => ({ ...prev, accountId: '' }));
+                        }}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+                          errors.accountId ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        required
+                      >
+                        <option value="">Select...</option>
+                        {accounts.map((account) => (
+                          <option key={account.id} value={account.id}>
+                            {account.name} ({formatCurrency(account.current_balance || 0)})
+                          </option>
+                        ))}
+                      </select>
+                      {errors.accountId && <p className="text-xs text-red-600 mt-1">{errors.accountId}</p>}
+                    </div>
+                  )}
+                </div>
+
                 {/* Transaction Type Buttons */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -336,7 +414,7 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
                       }`}
                     >
                       <div className="flex items-center justify-center gap-2">
-                        <span className="text-lg">💰</span>
+                        <span className="text-lg">�</span>
                         <span>Income</span>
                       </div>
                     </button>
@@ -368,60 +446,6 @@ export function QuickAddTransaction({ isOpen, onClose }: QuickAddTransactionProp
                         <span>Payment</span>
                       </div>
                     </button>
-                  </div>
-                </div>
-
-                {/* Date & Account Row */}
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      <span className="flex items-center gap-1">
-                        📅 Date
-                      </span>
-                    </label>
-                    <input
-                      ref={dateInputRef}
-                      type="date"
-                      value={date}
-                      onChange={(e) => {
-                        setDate(e.target.value);
-                        if (errors.date) setErrors(prev => ({ ...prev, date: '' }));
-                      }}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                        errors.date ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      required
-                    />
-                    {errors.date && <p className="text-xs text-red-600 mt-1">{errors.date}</p>}
-                  </div>
-
-                  {/* Account */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      <span className="flex items-center gap-1">
-                        🏦 {transactionType === 'transfer' || transactionType === 'payment' ? 'From Account' : 'Account'}
-                      </span>
-                    </label>
-                    <select
-                      value={accountId}
-                      onChange={(e) => {
-                        setAccountId(e.target.value);
-                        if (errors.accountId) setErrors(prev => ({ ...prev, accountId: '' }));
-                      }}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                        errors.accountId ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      required
-                    >
-                      <option value="">Select...</option>
-                      {accounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.name} ({formatCurrency(account.current_balance || 0)})
-                        </option>
-                      ))}
-                    </select>
-                    {errors.accountId && <p className="text-xs text-red-600 mt-1">{errors.accountId}</p>}
                   </div>
                 </div>
 

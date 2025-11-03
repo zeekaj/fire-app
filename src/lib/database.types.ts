@@ -60,11 +60,22 @@ export type Database = {
           account_group_id: string | null
           created_at: string | null
           created_by: string
+          credit_limit: number | null
           current_balance: number | null
+          escrow_amount: number | null
           id: string
+          interest_rate: number | null
           is_archived: boolean | null
+          mortgage_interest_rate: number | null
+          mortgage_original_amount: number | null
+          mortgage_start_date: string | null
+          mortgage_term_months: number | null
           name: string
+          next_payment_due_date: string | null
           opening_balance: number | null
+          payment_due_day: number | null
+          property_address: string | null
+          statement_close_day: number | null
           type: string
           updated_at: string | null
           valuation_updated_at: string | null
@@ -73,11 +84,22 @@ export type Database = {
           account_group_id?: string | null
           created_at?: string | null
           created_by: string
+          credit_limit?: number | null
           current_balance?: number | null
+          escrow_amount?: number | null
           id?: string
+          interest_rate?: number | null
           is_archived?: boolean | null
+          mortgage_interest_rate?: number | null
+          mortgage_original_amount?: number | null
+          mortgage_start_date?: string | null
+          mortgage_term_months?: number | null
           name: string
+          next_payment_due_date?: string | null
           opening_balance?: number | null
+          payment_due_day?: number | null
+          property_address?: string | null
+          statement_close_day?: number | null
           type: string
           updated_at?: string | null
           valuation_updated_at?: string | null
@@ -86,11 +108,22 @@ export type Database = {
           account_group_id?: string | null
           created_at?: string | null
           created_by?: string
+          credit_limit?: number | null
           current_balance?: number | null
+          escrow_amount?: number | null
           id?: string
+          interest_rate?: number | null
           is_archived?: boolean | null
+          mortgage_interest_rate?: number | null
+          mortgage_original_amount?: number | null
+          mortgage_start_date?: string | null
+          mortgage_term_months?: number | null
           name?: string
+          next_payment_due_date?: string | null
           opening_balance?: number | null
+          payment_due_day?: number | null
+          property_address?: string | null
+          statement_close_day?: number | null
           type?: string
           updated_at?: string | null
           valuation_updated_at?: string | null
@@ -313,6 +346,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "migrations_log_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      net_worth_snapshots: {
+        Row: {
+          account_count: number
+          created_at: string | null
+          created_by: string
+          id: string
+          net_worth: number
+          notes: string | null
+          snapshot_date: string
+          total_assets: number
+          total_liabilities: number
+          updated_at: string | null
+        }
+        Insert: {
+          account_count?: number
+          created_at?: string | null
+          created_by: string
+          id?: string
+          net_worth?: number
+          notes?: string | null
+          snapshot_date: string
+          total_assets?: number
+          total_liabilities?: number
+          updated_at?: string | null
+        }
+        Update: {
+          account_count?: number
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          net_worth?: number
+          notes?: string | null
+          snapshot_date?: string
+          total_assets?: number
+          total_liabilities?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "net_worth_snapshots_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"

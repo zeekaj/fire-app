@@ -4,7 +4,7 @@
  * Main application component with routing
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { runFirstLoginSetup } from './lib/first-login-setup';
 import { useEnhancedNavigation } from './lib/useEnhancedNavigation';
 import { logger } from './lib/logger';
@@ -13,8 +13,9 @@ import { useAuth } from './app/providers/AuthProvider';
 import { Dashboard } from './features/dashboard/components/Dashboard';
 import { FinancialAnalytics } from './features/dashboard/components/FinancialAnalytics';
 import { MonthlyBudgets } from './features/budgets/components/MonthlyBudgets';
-import { AccountsList } from './features/accounts';
+import { AccountsWorkspace } from './features/accounts';
 import { QuickAddTransaction } from './features/transactions/components/QuickAddTransaction';
+import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { TransactionsList } from './features/transactions/components/TransactionsList';
 import { BillsList } from './features/bills';
 import { ScenariosPage } from './features/scenarios';
@@ -32,6 +33,17 @@ function App() {
   const navigation = useEnhancedNavigation();
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const issuesModal = useIssuesModal();
+  const { data: allAccounts = [] } = useAccounts();
+
+  // If the user is on the Accounts tab, lock global Quick Add to the selected account
+  const accountsTabSelectedId = useMemo(() => {
+    if (navigation.activeTab !== 'accounts') return undefined;
+    try {
+      const saved = localStorage.getItem('lastSelectedAccountId') || undefined;
+      if (saved) return saved;
+    } catch {}
+    return allAccounts[0]?.id;
+  }, [navigation.activeTab, allAccounts]);
 
   useEffect(() => {
     if (user) {
@@ -52,13 +64,25 @@ function App() {
 
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
-        setIsTransactionModalOpen(true);
+        if (navigation.activeTab === 'accounts') {
+          // Open the account-scoped add modal when on Accounts tab
+          window.dispatchEvent(new CustomEvent('open-account-add-modal'));
+        } else {
+          setIsTransactionModalOpen(true);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Never allow the global Quick Add modal to be open on the Accounts tab
+  useEffect(() => {
+    if (navigation.activeTab === 'accounts' && isTransactionModalOpen) {
+      setIsTransactionModalOpen(false);
+    }
+  }, [navigation.activeTab, isTransactionModalOpen]);
 
   // const [isLoading, setIsLoading] = useState(true);
 
@@ -88,7 +112,7 @@ function App() {
       case 'analytics':
         return <FinancialAnalytics />;
       case 'accounts':
-        return <AccountsList />;
+        return <AccountsWorkspace />;
       case 'transactions':
         return <TransactionsList />;
       case 'bills':
@@ -120,7 +144,13 @@ function App() {
             <div className="flex items-center space-x-3">
               <HelpButton variant="inline" size="sm" />
               <button
-                onClick={() => setIsTransactionModalOpen(true)}
+                onClick={() => {
+                  if (navigation.activeTab === 'accounts') {
+                    window.dispatchEvent(new CustomEvent('open-account-add-modal'));
+                  } else {
+                    setIsTransactionModalOpen(true);
+                  }
+                }}
                 className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
                 <span className="flex items-center gap-2">
@@ -159,10 +189,14 @@ function App() {
         </main>
       </div>
 
-      <QuickAddTransaction
-        isOpen={isTransactionModalOpen}
-        onClose={() => setIsTransactionModalOpen(false)}
-      />
+      {navigation.activeTab !== 'accounts' && (
+        <QuickAddTransaction
+          isOpen={isTransactionModalOpen}
+          onClose={() => setIsTransactionModalOpen(false)}
+          defaultAccountId={accountsTabSelectedId}
+          lockAccountSelection={!!accountsTabSelectedId}
+        />
+      )}
 
       {/* Issues/Help Modal */}
       <IssuesModal

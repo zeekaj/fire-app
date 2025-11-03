@@ -138,7 +138,7 @@ export function ScenariosPage({ initialSelectedScenarioId }: ScenariosPageProps 
 
       {/* FIRE Scenario Selector */}
       <div className="mb-6">
-        <FIREScenarioSelectorTile onNavigateToScenarios={setSelectedScenarioId} />
+        <FIREScenarioSelectorTile onNavigateToScenarios={(scenarioId) => setSelectedScenarioId(scenarioId ?? null)} />
       </div>
 
       {/* Scenarios List */}

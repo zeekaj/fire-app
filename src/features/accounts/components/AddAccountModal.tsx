@@ -19,6 +19,19 @@ export function AddAccountModal({ isOpen, onClose }: AddAccountModalProps) {
   const [name, setName] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState('');
   const [openingBalance, setOpeningBalance] = useState('');
+  // Credit card fields
+  const [interestRate, setInterestRate] = useState('');
+  const [paymentDueDay, setPaymentDueDay] = useState('');
+  const [statementCloseDay, setStatementCloseDay] = useState('');
+  const [creditLimit, setCreditLimit] = useState('');
+  // Mortgage fields
+  const [mortgageInterestRate, setMortgageInterestRate] = useState('');
+  const [mortgageStartDate, setMortgageStartDate] = useState('');
+  const [mortgageTermMonths, setMortgageTermMonths] = useState('');
+  const [mortgageOriginalAmount, setMortgageOriginalAmount] = useState('');
+  const [propertyAddress, setPropertyAddress] = useState('');
+  const [escrowAmount, setEscrowAmount] = useState('');
+  const [nextPaymentDueDate, setNextPaymentDueDate] = useState('');
   const [showNewGroupForm, setShowNewGroupForm] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
 
@@ -56,20 +69,49 @@ export function AddAccountModal({ isOpen, onClose }: AddAccountModalProps) {
     };
     const accountType = selectedGroup ? (typeMap[selectedGroup.name] || 'checking') : 'checking';
 
+    // Prepare credit card fields if type is credit
+    const newAccount: any = {
+      name: name.trim(),
+      type: accountType,
+      account_group_id: selectedGroupId,
+      opening_balance: balance,
+      current_balance: balance,
+      is_archived: false,
+    };
+    if (accountType === 'credit') {
+      newAccount.interest_rate = interestRate ? parseFloat(interestRate) : null;
+      newAccount.payment_due_day = paymentDueDay ? parseInt(paymentDueDay) : null;
+      newAccount.statement_close_day = statementCloseDay ? parseInt(statementCloseDay) : null;
+      newAccount.credit_limit = creditLimit ? parseFloat(creditLimit) : null;
+    }
+    if (accountType === 'mortgage') {
+      newAccount.mortgage_interest_rate = mortgageInterestRate ? parseFloat(mortgageInterestRate) : null;
+      newAccount.mortgage_start_date = mortgageStartDate || null;
+      newAccount.mortgage_term_months = mortgageTermMonths ? parseInt(mortgageTermMonths) : null;
+      newAccount.mortgage_original_amount = mortgageOriginalAmount ? parseFloat(mortgageOriginalAmount) : null;
+      newAccount.property_address = propertyAddress || null;
+      newAccount.escrow_amount = escrowAmount ? parseFloat(escrowAmount) : null;
+      newAccount.next_payment_due_date = nextPaymentDueDate || null;
+    }
+
     try {
-      await createAccount.mutateAsync({
-        name: name.trim(),
-        type: accountType,
-        account_group_id: selectedGroupId,
-        opening_balance: balance,
-        current_balance: balance,
-        is_archived: false,
-      });
+      await createAccount.mutateAsync(newAccount);
 
       // Reset form
       setName('');
       setSelectedGroupId('');
       setOpeningBalance('');
+      setInterestRate('');
+      setPaymentDueDay('');
+      setStatementCloseDay('');
+      setCreditLimit('');
+      setMortgageInterestRate('');
+      setMortgageStartDate('');
+      setMortgageTermMonths('');
+      setMortgageOriginalAmount('');
+      setPropertyAddress('');
+      setEscrowAmount('');
+      setNextPaymentDueDate('');
       onClose();
     } catch (error) {
       logger.error('Failed to create account', error);
@@ -239,6 +281,197 @@ export function AddAccountModal({ isOpen, onClose }: AddAccountModalProps) {
                 Enter the current balance of this account
               </p>
             </div>
+
+            {/* Credit Card Fields (only for credit accounts) */}
+            {(() => {
+              const selectedGroup = accountGroups?.find(g => g.id === selectedGroupId);
+              const typeMap: Record<string, string> = {
+                'Checking': 'checking',
+                'Savings': 'savings',
+                'Credit Card': 'credit',
+                'Investment': 'investment',
+                'Retirement': 'retirement',
+                'HSA': 'hsa',
+                'Mortgage': 'mortgage',
+                'Cash': 'cash',
+                'Asset': 'asset',
+              };
+              const accountType = selectedGroup ? (typeMap[selectedGroup.name] || 'checking') : 'checking';
+              if (accountType !== 'credit') return null;
+              return (
+                <div className="space-y-4 pt-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Interest Rate (APR %)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="99"
+                      value={interestRate}
+                      onChange={e => setInterestRate(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="e.g. 19.99"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Payment Due Day
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={paymentDueDay}
+                      onChange={e => setPaymentDueDay(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="e.g. 15"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Statement Close Day (optional)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={statementCloseDay}
+                      onChange={e => setStatementCloseDay(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="e.g. 10"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Credit Limit (optional)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={creditLimit}
+                      onChange={e => setCreditLimit(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="e.g. 5000"
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Mortgage Fields (only for mortgage accounts) */}
+            {(() => {
+              const selectedGroup = accountGroups?.find(g => g.id === selectedGroupId);
+              const typeMap: Record<string, string> = {
+                'Checking': 'checking',
+                'Savings': 'savings',
+                'Credit Card': 'credit',
+                'Investment': 'investment',
+                'Retirement': 'retirement',
+                'HSA': 'hsa',
+                'Mortgage': 'mortgage',
+                'Cash': 'cash',
+                'Asset': 'asset',
+              };
+              const accountType = selectedGroup ? (typeMap[selectedGroup.name] || 'checking') : 'checking';
+              if (accountType !== 'mortgage') return null;
+              return (
+                <div className="space-y-4 pt-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Interest Rate (APR %)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="99"
+                      value={mortgageInterestRate}
+                      onChange={e => setMortgageInterestRate(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="e.g. 3.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Loan Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={mortgageStartDate}
+                      onChange={e => setMortgageStartDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Loan Term (months)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={mortgageTermMonths}
+                      onChange={e => setMortgageTermMonths(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="e.g. 360 (30 years)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Original Loan Amount
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={mortgageOriginalAmount}
+                      onChange={e => setMortgageOriginalAmount(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="e.g. 250000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Property Address (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={propertyAddress}
+                      onChange={e => setPropertyAddress(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="e.g. 123 Main St"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Monthly Escrow Amount (optional)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={escrowAmount}
+                      onChange={e => setEscrowAmount(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="e.g. 500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Next Payment Due Date (optional)
+                    </label>
+                    <input
+                      type="date"
+                      value={nextPaymentDueDate}
+                      onChange={e => setNextPaymentDueDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Actions */}
             <div className="flex gap-3 pt-4">

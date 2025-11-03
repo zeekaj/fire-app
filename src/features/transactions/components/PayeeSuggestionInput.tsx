@@ -10,7 +10,7 @@
  * - Auto-fill category when payee is selected
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useSmartPayeeSuggestions, useTopPayees } from '../hooks/useSmartPayeeSuggestions';
 
 interface PayeeSuggestionInputProps {
@@ -39,6 +39,7 @@ export function PayeeSuggestionInput({
 }: PayeeSuggestionInputProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState(value);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +51,7 @@ export function PayeeSuggestionInput({
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setHighlightedIndex(-1);
       }
     }
 
@@ -66,6 +68,7 @@ export function PayeeSuggestionInput({
     setSearchTerm(newValue);
     onChange(newValue);
     setIsOpen(true);
+    setHighlightedIndex(-1);
   };
 
   const handleSuggestionSelect = (suggestion: any) => {
@@ -83,16 +86,42 @@ export function PayeeSuggestionInput({
     if (e.key === 'Escape') {
       setIsOpen(false);
       inputRef.current?.blur();
+      setHighlightedIndex(-1);
     }
-    
-    // If Enter is pressed and there's exactly one suggestion, select it
-    if (e.key === 'Enter' && displaySuggestions.length === 1) {
+
+    if (e.key === 'ArrowDown' || e.key === 'Down') {
+      if (!isOpen) setIsOpen(true);
       e.preventDefault();
-      handleSuggestionSelect(displaySuggestions[0]);
+      const next = Math.min(highlightedIndex + 1, displaySuggestions.length - 1);
+      setHighlightedIndex(next < 0 ? 0 : next);
+      return;
+    }
+
+    if (e.key === 'ArrowUp' || e.key === 'Up') {
+      if (!isOpen) setIsOpen(true);
+      e.preventDefault();
+      const prev = Math.max(highlightedIndex - 1, 0);
+      setHighlightedIndex(prev);
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      if (highlightedIndex >= 0 && highlightedIndex < displaySuggestions.length) {
+        e.preventDefault();
+        handleSuggestionSelect(displaySuggestions[highlightedIndex]);
+        return;
+      }
+      if (displaySuggestions.length === 1) {
+        e.preventDefault();
+        handleSuggestionSelect(displaySuggestions[0]);
+      }
     }
   };
 
-  const displaySuggestions = searchTerm ? suggestions : topPayees;
+  const displaySuggestions = useMemo(() => (searchTerm ? suggestions : topPayees), [searchTerm, suggestions, topPayees]);
+  const activeDescendantId = highlightedIndex >= 0 && highlightedIndex < displaySuggestions.length
+    ? `payee-option-${displaySuggestions[highlightedIndex].id}`
+    : undefined;
   const showQuickAccess = !searchTerm && topPayees.length > 0;
 
   return (
@@ -109,6 +138,11 @@ export function PayeeSuggestionInput({
         required={required}
         disabled={disabled}
         autoFocus={autoFocus}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={isOpen}
+        aria-controls="payee-suggestions-list"
+        aria-activedescendant={activeDescendantId}
         className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${className}`}
       />
 
@@ -165,32 +199,39 @@ export function PayeeSuggestionInput({
       )}
 
       {/* Search Results */}
-      {searchTerm && isOpen && displaySuggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-64 overflow-y-auto">
-          {displaySuggestions.map((suggestion) => (
-            <button
-              key={suggestion.id}
-              type="button"
-              onClick={() => handleSuggestionSelect(suggestion)}
-              className="w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center justify-between"
-            >
-              <div>
-                <div className="font-medium text-gray-900">
-                  {highlightMatch(suggestion.name, searchTerm)}
+      {isOpen && displaySuggestions.length > 0 && (
+        <div id="payee-suggestions-list" role="listbox" className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-64 overflow-y-auto">
+          {displaySuggestions.map((suggestion, idx) => {
+            const isActive = idx === highlightedIndex;
+            return (
+              <button
+                id={`payee-option-${suggestion.id}`}
+                role="option"
+                aria-selected={isActive}
+                key={suggestion.id}
+                type="button"
+                onClick={() => handleSuggestionSelect(suggestion)}
+                onMouseEnter={() => setHighlightedIndex(idx)}
+                className={`w-full px-3 py-2 text-left flex items-center justify-between ${isActive ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
+              >
+                <div>
+                  <div className="font-medium text-gray-900">
+                    {highlightMatch(suggestion.name, searchTerm)}
+                  </div>
+                  {suggestion.last_used && (
+                    <div className="text-xs text-gray-500">
+                      Used {suggestion.usage_count} times • Last: {new Date(suggestion.last_used).toLocaleDateString()}
+                    </div>
+                  )}
                 </div>
-                {suggestion.last_used && (
-                  <div className="text-xs text-gray-500">
-                    Used {suggestion.usage_count} times • Last: {new Date(suggestion.last_used).toLocaleDateString()}
+                {suggestion.usage_count > 0 && (
+                  <div className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                    {suggestion.usage_count}
                   </div>
                 )}
-              </div>
-              {suggestion.usage_count > 0 && (
-                <div className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
-                  {suggestion.usage_count}
-                </div>
-              )}
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       )}
 

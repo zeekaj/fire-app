@@ -56,10 +56,12 @@ export function useCreateTransaction() {
       return await insertWithOwnership('transactions', transactionWithType);
     },
     onSuccess: async () => {
-      // Remove cached data and refetch
-      queryClient.removeQueries({ queryKey: ['transactions'] });
-      await queryClient.refetchQueries({ queryKey: ['transactions'] });
-      await queryClient.refetchQueries({ queryKey: ['accounts'] });
+      // Invalidate all transaction-related queries
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['account-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['income-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['net-worth-history'] });
     },
   });
 }
@@ -88,7 +90,9 @@ export function useUpdateTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['account-transactions'] }); // Invalidate account register queries
+      queryClient.invalidateQueries({ queryKey: ['account-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['income-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['net-worth-history'] });
     },
   });
 }
@@ -114,7 +118,9 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['account-transactions'] }); // Invalidate account register queries
+      queryClient.invalidateQueries({ queryKey: ['account-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['income-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['net-worth-history'] });
     },
   });
 }

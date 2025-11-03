@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Database } from '../../../lib/database.types';
 import { formatCurrency } from '../../../lib/format';
+import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 
 type Transaction = Database['public']['Tables']['transactions']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
@@ -33,6 +34,12 @@ interface MonthlyData {
 }
 
 export function TransactionAnalytics({ transactions, categories, payees }: TransactionAnalyticsProps) {
+  const { data: accounts = [] } = useAccounts();
+  const accountsById = useMemo(() => {
+    const map = new Map<string, { id: string; type: string }>();
+    accounts.forEach(a => map.set(a.id, { id: a.id, type: a.type }));
+    return map;
+  }, [accounts]);
   // Helper to get leaf category name from path
   const getCategoryLeafName = (category: Category) => {
     if (category.path) {
@@ -154,6 +161,10 @@ export function TransactionAnalytics({ transactions, categories, payees }: Trans
 
     transactions.forEach(tx => {
       if (tx.transaction_type === 'debt_payment' && tx.amount < 0) {
+        // Exclude credit card payoffs to avoid double-counting expenses
+        const paired = transactions.find(t => t.id === tx.transfer_id);
+        const pairedType = paired ? accountsById.get(paired.account_id)?.type : undefined;
+        if (['credit', 'credit_card'].includes(pairedType || '')) return;
         const amount = Math.abs(tx.amount);
         totalDebtPayments += amount;
         count++;
@@ -175,7 +186,7 @@ export function TransactionAnalytics({ transactions, categories, payees }: Trans
       monthlyData,
       averagePayment: count > 0 ? totalDebtPayments / count : 0
     };
-  }, [transactions]);
+  }, [transactions, accountsById]);
 
   const maxCategoryAmount = categoryBreakdown[0]?.amount || 1;
   const maxPayeeAmount = topPayees[0]?.amount || 1;
