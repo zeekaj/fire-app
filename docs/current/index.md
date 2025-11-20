@@ -162,8 +162,20 @@ This documentation index is the authoritative reference for all current document
 
 ---
 
-**Last Updated:** November 3, 2025  
+**Last Updated:** November 20, 2025  
 **Maintained By:** Development Team  
+ 
+## 🧹 Removed / Purged Documents
+
+The `docs/removed/` folder contains documents that were deprecated or superseded and have been purged from the active archive for clarity. Files have been preserved for historical reference.
+
+- `docs/removed/DEPRECATED_TYPE_FIELD_DECISION.md` — Decision log about the deprecated `type` field.
+- `docs/removed/FUTURE_ROADMAP_OLD.md` — Older roadmap replaced by `FUTURE_ROADMAP.md` (current).
+- `docs/removed/USER_GUIDE_OLD.md` — Previous user guide preserved for reference.
+- `docs/removed/README_PHASE_A.md` — Phase A implementation notes archived.
+
+If you need any file restored to `archive/`, open an issue or PR and we'll move it back.
+
 **Questions?** Open an issue or check the [Issues Modal](../../src/components/IssuesModal.tsx) in the app.
 
 This documentation is actively maintained. If you notice outdated information:
