@@ -8,6 +8,7 @@
 
 import { X } from 'lucide-react';
 import { NetWorthChart } from './charts/NetWorthChart';
+import { useMonteCarlo } from '../hooks/useMonteCarlo';
 import type { ScenarioDisplay } from '../scenarios.types';
 
 interface ScenarioDetailViewProps {
@@ -16,6 +17,7 @@ interface ScenarioDetailViewProps {
 }
 
 export function ScenarioDetailView({ scenario, onClose }: ScenarioDetailViewProps) {
+  const { runSimulation, isRunning, result } = useMonteCarlo();
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
@@ -77,6 +79,50 @@ export function ScenarioDetailView({ scenario, onClose }: ScenarioDetailViewProp
           {/* Net Worth Projection Chart */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 mb-8">
             <NetWorthChart scenario={scenario} height={400} />
+          </div>
+
+          {/* Monte Carlo Simulation */}
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Monte Carlo Simulation
+              </h3>
+              <button
+                onClick={() => runSimulation(scenario)}
+                disabled={isRunning}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isRunning ? 'Running...' : 'Run Simulation'}
+              </button>
+            </div>
+
+            {result && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <MetricCard
+                  label="Success Rate"
+                  value={`${(result.success_rate * 100).toFixed(1)}%`}
+                />
+                <MetricCard
+                  label="Median Balance"
+                  value={formatCurrency(result.median_balance)}
+                />
+                <MetricCard
+                  label="10th Percentile"
+                  value={formatCurrency(result.percentile_10)}
+                />
+                <MetricCard
+                  label="90th Percentile"
+                  value={formatCurrency(result.percentile_90)}
+                />
+              </div>
+            )}
+
+            {isRunning && (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">Running simulations...</p>
+              </div>
+            )}
           </div>
 
           {/* Scenario Parameters */}

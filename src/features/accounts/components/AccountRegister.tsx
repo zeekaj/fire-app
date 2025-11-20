@@ -12,6 +12,9 @@ import { formatCurrency, formatDate } from '@/lib/format';
 import { EditTransaction } from '@/features/transactions/components/EditTransaction';
 import { EditAccountModal } from './EditAccountModal';
 import { sortChronologicalByDateCreatedAt, computeRunningBalances } from '../utils/register';
+import { useBulkDeleteTransactions, useBulkUpdateTransactions } from '@/features/transactions/hooks/useTransactions';
+import { useAccounts } from '../hooks/useAccounts';
+import { useCategories } from '@/features/transactions/hooks/useCategories';
 import type { AccountWithGroup } from '../hooks/useAccounts';
 
 interface AccountRegisterProps {
@@ -30,9 +33,18 @@ interface AccountRegisterProps {
 
 export function AccountRegister({ account, onClose, variant = 'modal', startDate, endDate }: AccountRegisterProps) {
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<'date' | 'description' | 'category' | 'amount'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [isEditAccountOpen, setIsEditAccountOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showBulkActions, setShowBulkActions] = useState(false);
+
+  // Bulk operation hooks
+  const bulkDelete = useBulkDeleteTransactions();
+  const bulkUpdate = useBulkUpdateTransactions();
+  const { data: allAccounts = [] } = useAccounts();
+  const { data: categories = [] } = useCategories();
 
   // Calculate next occurrence of a specific day of the month
   const getNextDateForDay = (dayOfMonth: number): Date => {
@@ -102,17 +114,110 @@ export function AccountRegister({ account, onClose, variant = 'modal', startDate
     },
   });
 
+  // Fetch transactions BEFORE the startDate to calculate the starting balance for filtered view
+  const { data: priorTransactions = [] } = useQuery({
+    queryKey: ['account-transactions-prior', account.id, startDate ?? null],
+    queryFn: async () => {
+      // If no startDate filter, we don't need prior transactions
+      if (!startDate) return [];
+      
+      const userId = await requireAuth();
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('date, created_at, amount')
+        .eq('created_by', userId as any)
+        .eq('account_id', account.id)
+        .lt('date', startDate)
+        .order('date', { ascending: true })
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Calculate the starting balance based on whether we have a date filter
+  const startingBalance = useMemo(() => {
+    if (!startDate || priorTransactions.length === 0) {
+      // No date filter or no prior transactions - use opening balance
+      return account.opening_balance || 0;
+    }
+    
+    // Calculate balance from opening balance + all prior transactions
+    let balance = account.opening_balance || 0;
+    for (const tx of priorTransactions) {
+      balance += isLiability ? -tx.amount : tx.amount;
+    }
+    return balance;
+  }, [startDate, priorTransactions, account.opening_balance, isLiability]);
+
   // Calculate running balance on a chronologically sorted copy
   const chronologicalTransactions = sortChronologicalByDateCreatedAt(accountTransactions as any) as any[];
   const transactionsWithBalance = computeRunningBalances(
     chronologicalTransactions as any[],
-    account.opening_balance || 0,
+    startingBalance,
     isLiability
   ) as any[];
 
+  // Gather transfer IDs present in this account's transactions so we can fetch the counterparty account names
+  const transferIds = Array.from(
+    new Set(transactionsWithBalance.filter(tx => tx.transfer_id).map(tx => tx.transfer_id))
+  ).filter(Boolean) as string[];
+
+  const { data: transferCounterparts = [] } = useQuery({
+    queryKey: ['transfer-counterparts', account.id, transferIds.join(',')],
+    queryFn: async () => {
+      if (transferIds.length === 0) return [];
+      const userId = await requireAuth();
+      // Fetch only the opposite side transactions (where account_id != this account)
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('id, account_id, transfer_id, account:accounts(name)')
+        // partner transactions will have id equal to the transfer_id referenced by the rows
+        .in('id', transferIds)
+        .neq('account_id', account.id)
+        .eq('created_by', userId as any);
+
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  // Build a map transfer_id -> other account name (the account that is not this account)
+  const transferMap = useMemo(() => {
+    const map: Record<string, { accountId: string; accountName: string } | undefined> = {};
+    transferCounterparts.forEach((tx: any) => {
+      // Map by the partner transaction id (tx.id) so we can lookup by the original row's transfer_id
+      if (!tx || !tx.id) return;
+      map[tx.id] = { accountId: tx.account_id, accountName: tx.account?.name || 'Account' };
+    });
+    return map;
+  }, [transferCounterparts, account.id]);
+
   // Sort helper
   const sortedTransactions = useMemo(() => {
-    const rows = [...transactionsWithBalance];
+    let rows = [...transactionsWithBalance];
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      rows = rows.filter((tx: any) => {
+        const payeeName = tx.payee?.name?.toLowerCase() || '';
+        const categoryName = tx.category?.name?.toLowerCase() || '';
+        const notes = tx.notes?.toLowerCase() || '';
+        const amount = Math.abs(tx.amount).toString();
+        const date = tx.date || '';
+        
+        return payeeName.includes(query) || 
+               categoryName.includes(query) || 
+               notes.includes(query) || 
+               amount.includes(query) ||
+               date.includes(query);
+      });
+    }
+    
     const dir = sortDir === 'asc' ? 1 : -1;
     rows.sort((a: any, b: any) => {
       let av: any;
@@ -146,7 +251,7 @@ export function AccountRegister({ account, onClose, variant = 'modal', startDate
       }
     });
     return rows;
-  }, [transactionsWithBalance, sortField, sortDir]);
+  }, [transactionsWithBalance, sortField, sortDir, searchQuery]);
 
   function toggleSort(field: typeof sortField) {
     if (sortField === field) {
@@ -157,17 +262,113 @@ export function AccountRegister({ account, onClose, variant = 'modal', startDate
     }
   }
 
+  const toggleTransactionSelection = (id: string, event?: React.MouseEvent) => {
+    event?.stopPropagation();
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedIds(new Set(sortedTransactions.map(tx => tx.id)));
+  };
+
+  const deselectAll = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleRowClick = (id: string, event: React.MouseEvent) => {
+    if (event.metaKey || event.ctrlKey) {
+      // Cmd/Ctrl+click: toggle selection
+      toggleTransactionSelection(id, event);
+    } else if (event.shiftKey && selectedIds.size > 0) {
+      // Shift+click: range selection
+      const currentIndex = sortedTransactions.findIndex(tx => tx.id === id);
+      const selectedArray = Array.from(selectedIds);
+      const lastSelectedId = selectedArray[selectedArray.length - 1];
+      const lastIndex = sortedTransactions.findIndex(tx => tx.id === lastSelectedId);
+      
+      if (currentIndex !== -1 && lastIndex !== -1) {
+        const start = Math.min(currentIndex, lastIndex);
+        const end = Math.max(currentIndex, lastIndex);
+        const rangeIds = sortedTransactions.slice(start, end + 1).map(tx => tx.id);
+        setSelectedIds(new Set([...selectedIds, ...rangeIds]));
+      }
+    } else if (selectedIds.size > 0) {
+      // If there are selections, clicking adds to selection
+      toggleTransactionSelection(id, event);
+    } else {
+      // Normal click: open edit modal
+      setSelectedTransactionId(id);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const count = selectedIds.size;
+    if (!confirm(`Delete ${count} transaction${count !== 1 ? 's' : ''}?\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await bulkDelete.mutateAsync(Array.from(selectedIds));
+      deselectAll();
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+      alert('Failed to delete transactions. Please try again.');
+    }
+  };
+
+  const handleBulkCategorize = async (categoryId: string) => {
+    try {
+      await bulkUpdate.mutateAsync({
+        ids: Array.from(selectedIds),
+        updates: { category_id: categoryId }
+      });
+      deselectAll();
+    } catch (error) {
+      console.error('Bulk categorize failed:', error);
+      alert('Failed to update categories. Please try again.');
+    }
+  };
+
+  const handleBulkMoveToAccount = async (accountId: string) => {
+    try {
+      await bulkUpdate.mutateAsync({
+        ids: Array.from(selectedIds),
+        updates: { account_id: accountId }
+      });
+      deselectAll();
+    } catch (error) {
+      console.error('Bulk move failed:', error);
+      alert('Failed to move transactions. Please try again.');
+    }
+  };
+
   const content = (
     <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm w-full p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <div>
+            <div className="flex-1">
               <h2 className="text-2xl font-bold text-gray-900">{account.name}</h2>
               <p className="text-sm text-gray-600 mt-1">
                 Account Register • Current Balance: {formatCurrency(account.current_balance || 0)}
               </p>
             </div>
             <div className="flex items-center gap-2">
+              {/* Search */}
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search transactions..."
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent w-64"
+              />
               {/* Edit account button */}
               <button
                 onClick={() => setIsEditAccountOpen(true)}
@@ -275,12 +476,104 @@ export function AccountRegister({ account, onClose, variant = 'modal', startDate
             </div>
           )}
 
+          {/* Bulk Actions Toolbar */}
+          {selectedIds.size > 0 && (
+            <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-blue-900">
+                    {selectedIds.size} transaction{selectedIds.size !== 1 ? 's' : ''} selected
+                  </span>
+                  <button
+                    onClick={deselectAll}
+                    className="text-sm text-blue-700 hover:text-blue-900 underline"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={() => setShowBulkActions(!showBulkActions)}
+                    className="text-sm text-blue-700 hover:text-blue-900 underline"
+                  >
+                    {showBulkActions ? 'Hide actions' : 'More actions'}
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={bulkDelete.isPending}
+                    className="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    {bulkDelete.isPending ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Expanded Bulk Actions */}
+              {showBulkActions && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-blue-200">
+                  {/* Categorize */}
+                  <div>
+                    <label className="block text-xs font-medium text-blue-900 mb-1">
+                      Change Category
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          handleBulkCategorize(e.target.value);
+                          e.target.value = '';
+                        }
+                      }}
+                      disabled={bulkUpdate.isPending}
+                      className="w-full px-2 py-1.5 text-sm border border-blue-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                    >
+                      <option value="">Select category...</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Move to Account */}
+                  <div>
+                    <label className="block text-xs font-medium text-blue-900 mb-1">
+                      Move to Account
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          handleBulkMoveToAccount(e.target.value);
+                          e.target.value = '';
+                        }
+                      }}
+                      disabled={bulkUpdate.isPending}
+                      className="w-full px-2 py-1.5 text-sm border border-blue-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                    >
+                      <option value="">Select account...</option>
+                      {allAccounts.filter(a => a.id !== account.id).map(acc => (
+                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Register Table */}
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-4 py-3 w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.size > 0 && selectedIds.size === sortedTransactions.length}
+                        onChange={(e) => e.target.checked ? selectAll() : deselectAll()}
+                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                        title="Select all transactions"
+                      />
+                    </th>
                     <th
                       role="columnheader button"
                       aria-sort={sortField === 'date' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
@@ -352,50 +645,80 @@ export function AccountRegister({ account, onClose, variant = 'modal', startDate
                       <>
                         {!openingRowAtBottom && (
                           <tr className="bg-blue-50">
+                            <td className="px-4 py-3"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">—</td>
                             <td className="px-4 py-3 text-sm text-gray-900 font-medium" colSpan={2}>
                               <span className="inline-flex items-center gap-2">
-                                Beginning Balance
-                                <button
-                                  type="button"
-                                  onClick={() => setIsEditAccountOpen(true)}
-                                  className="inline-flex items-center p-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
-                                  title="Edit opening balance"
-                                  aria-label="Edit opening balance"
-                                >
-                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                </button>
+                                {startDate ? `Beginning Balance (as of ${formatDate(startDate)})` : 'Beginning Balance'}
+                                {!startDate && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsEditAccountOpen(true)}
+                                    className="inline-flex items-center p-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+                                    title="Edit opening balance"
+                                    aria-label="Edit opening balance"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                )}
                               </span>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold text-gray-900">
-                              {formatCurrency(account.opening_balance || 0)}
+                              {formatCurrency(startingBalance)}
                             </td>
                           </tr>
                         )}
                         {sortedTransactions.length === 0 ? (
                           <tr>
-                            <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No transactions yet</td>
+                            <td colSpan={7} className="px-4 py-8 text-center text-gray-500">No transactions yet</td>
                           </tr>
                         ) : (
                           sortedTransactions.map((tx) => (
                             <tr
                               key={tx.id}
-                              className="hover:bg-gray-50 transition-colors cursor-pointer"
-                              onClick={() => setSelectedTransactionId(tx.id)}
+                              className={`hover:bg-gray-50 transition-colors cursor-pointer ${
+                                selectedIds.has(tx.id) ? 'bg-blue-50' : ''
+                              }`}
+                              onClick={(e) => handleRowClick(tx.id, e)}
                             >
+                              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedIds.has(tx.id)}
+                                  onChange={(e) => toggleTransactionSelection(tx.id, e as any)}
+                                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                              </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{formatDate(tx.date)}</td>
                               <td className="px-4 py-3 text-sm text-gray-900">
                                 <div>
                                   <div className="font-medium">
                                     {tx.transfer_id ? (
-                                      <span className="flex items-center gap-1">
-                                        {tx.transaction_type === 'payment' ? '💳' : '↔️'}
-                                        {tx.transaction_type === 'payment' ? 'Debt Payment' : 'Transfer'}
-                                      </span>
+                                      (() => {
+                                        const cp = transferMap[tx.transfer_id];
+                                        const cpName = cp?.accountName || 'Other Account';
+                                        const isOutgoing = Number(tx.amount) < 0;
+                                        if (tx.transaction_type === 'payment') {
+                                          return (
+                                            <span className="flex items-center gap-1">
+                                              <span>💳</span>
+                                              <span>{isOutgoing ? `Payment to ${cpName}` : `Payment from ${cpName}`}</span>
+                                            </span>
+                                          );
+                                        }
+
+                                        // Transfer
+                                        return (
+                                          <span className="flex items-center gap-1">
+                                            <span>↔️</span>
+                                            <span>{isOutgoing ? `Transfer to ${cpName}` : `Transfer from ${cpName}`}</span>
+                                          </span>
+                                        );
+                                      })()
                                     ) : (
                                       tx.payee?.name || '—'
                                     )}
@@ -418,27 +741,30 @@ export function AccountRegister({ account, onClose, variant = 'modal', startDate
                         )}
                         {openingRowAtBottom && (
                           <tr className="bg-blue-50">
+                            <td className="px-4 py-3"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">—</td>
                             <td className="px-4 py-3 text-sm text-gray-900 font-medium" colSpan={2}>
                               <span className="inline-flex items-center gap-2">
-                                Beginning Balance
-                                <button
-                                  type="button"
-                                  onClick={() => setIsEditAccountOpen(true)}
-                                  className="inline-flex items-center p-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
-                                  title="Edit opening balance"
-                                  aria-label="Edit opening balance"
-                                >
-                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                </button>
+                                {startDate ? `Beginning Balance (as of ${formatDate(startDate)})` : 'Beginning Balance'}
+                                {!startDate && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setIsEditAccountOpen(true)}
+                                    className="inline-flex items-center p-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+                                    title="Edit opening balance"
+                                    aria-label="Edit opening balance"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                )}
                               </span>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900"></td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold text-gray-900">
-                              {formatCurrency(account.opening_balance || 0)}
+                              {formatCurrency(startingBalance)}
                             </td>
                           </tr>
                         )}
@@ -451,26 +777,102 @@ export function AccountRegister({ account, onClose, variant = 'modal', startDate
           </div>
 
           {/* Summary Footer */}
-          <div className="mt-6 flex justify-between items-center text-sm">
-            <div className="text-gray-600">
-              {transactionsWithBalance.length} transaction{transactionsWithBalance.length !== 1 ? 's' : ''}
-            </div>
-            <div className="flex gap-6">
-              <div>
-                <span className="text-gray-600">Total {isLiability ? 'Charges' : 'Expenses'}: </span>
-                <span className="font-semibold text-red-600">
-                  {formatCurrency(
-                    transactionsWithBalance.reduce((sum, tx) => sum + (tx.amount < 0 ? Math.abs(tx.amount) : 0), 0)
-                  )}
-                </span>
+          <div className="mt-6 border-t border-gray-200 pt-4">
+            <div className="flex justify-between items-start text-sm">
+              <div className="text-gray-600">
+                {sortedTransactions.length} transaction{sortedTransactions.length !== 1 ? 's' : ''}
+                {searchQuery.trim() && sortedTransactions.length !== transactionsWithBalance.length && (
+                  <span className="text-gray-500 ml-1">
+                    (filtered from {transactionsWithBalance.length})
+                  </span>
+                )}
               </div>
-              <div>
-                <span className="text-gray-600">Total Payments: </span>
-                <span className="font-semibold text-green-600">
-                  {formatCurrency(
-                    transactionsWithBalance.reduce((sum, tx) => sum + (tx.amount > 0 ? tx.amount : 0), 0)
-                  )}
-                </span>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-2">
+                {/* Regular expenses/charges (excluding interest) */}
+                <div className="text-right">
+                  <div className="text-xs text-gray-500 mb-0.5">
+                    {isLiability ? 'Charges' : 'Expenses'}
+                  </div>
+                  <div className="font-semibold text-red-600">
+                    {formatCurrency(
+                      sortedTransactions
+                        .filter(tx => tx.amount < 0 && !tx.category?.name?.toLowerCase().includes('interest') && !tx.category?.name?.toLowerCase().includes('reward'))
+                        .reduce((sum, tx) => sum + Math.abs(tx.amount), 0)
+                    )}
+                  </div>
+                </div>
+
+                {/* Regular payments (excluding interest payments/rewards) */}
+                <div className="text-right">
+                  <div className="text-xs text-gray-500 mb-0.5">
+                    {isLiability ? 'Payments' : 'Income'}
+                  </div>
+                  <div className="font-semibold text-green-600">
+                    {formatCurrency(
+                      sortedTransactions
+                        .filter(tx => tx.amount > 0 && !tx.category?.name?.toLowerCase().includes('interest') && !tx.category?.name?.toLowerCase().includes('reward'))
+                        .reduce((sum, tx) => sum + tx.amount, 0)
+                    )}
+                  </div>
+                </div>
+
+                {/* Interest charged (negative amounts) */}
+                <div className="text-right">
+                  <div className="text-xs text-gray-500 mb-0.5">
+                    Interest Charged
+                  </div>
+                  <div className="font-semibold text-red-600">
+                    {formatCurrency(
+                      sortedTransactions
+                        .filter(tx => tx.amount < 0 && tx.category?.name?.toLowerCase().includes('interest'))
+                        .reduce((sum, tx) => sum + Math.abs(tx.amount), 0)
+                    )}
+                  </div>
+                </div>
+
+                {/* Interest earned (positive amounts) */}
+                <div className="text-right">
+                  <div className="text-xs text-gray-500 mb-0.5">
+                    Interest Earned
+                  </div>
+                  <div className="font-semibold text-green-600">
+                    {formatCurrency(
+                      sortedTransactions
+                        .filter(tx => tx.amount > 0 && tx.category?.name?.toLowerCase().includes('interest'))
+                        .reduce((sum, tx) => sum + tx.amount, 0)
+                    )}
+                  </div>
+                </div>
+
+                {/* Rewards charged (negative - unlikely but possible) */}
+                {sortedTransactions.some(tx => tx.amount < 0 && tx.category?.name?.toLowerCase().includes('reward')) && (
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500 mb-0.5">
+                      Rewards Redeemed
+                    </div>
+                    <div className="font-semibold text-red-600">
+                      {formatCurrency(
+                        sortedTransactions
+                          .filter(tx => tx.amount < 0 && tx.category?.name?.toLowerCase().includes('reward'))
+                          .reduce((sum, tx) => sum + Math.abs(tx.amount), 0)
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Rewards earned (positive amounts) */}
+                <div className="text-right">
+                  <div className="text-xs text-gray-500 mb-0.5">
+                    Rewards Earned
+                  </div>
+                  <div className="font-semibold text-green-600">
+                    {formatCurrency(
+                      sortedTransactions
+                        .filter(tx => tx.amount > 0 && tx.category?.name?.toLowerCase().includes('reward'))
+                        .reduce((sum, tx) => sum + tx.amount, 0)
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

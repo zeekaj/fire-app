@@ -21,6 +21,7 @@ import { PayeeSuggestionInput } from './PayeeSuggestionInput';
 import { CategorySuggestionInput } from './CategorySuggestionInput';
 import { logger } from '@/lib/logger';
 import { formatCurrency, formatDate } from '@/lib/format';
+import { validateTransactionInput } from '@/lib/data-utils';
 
 interface QuickAddTransactionProps {
   isOpen: boolean;
@@ -179,28 +180,25 @@ export function QuickAddTransaction({ isOpen, onClose, defaultAccountId, default
     }
   };
 
-  // Validate form
+  // Validate form using shared helper
   const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+    const parsedAmount = amount ? parseFloat(amount) : undefined;
+    const selectedAccount = accounts.find(a => a.id === accountId);
+    const selectedToAccount = accounts.find(a => a.id === toAccountId);
+    const inputErrors = validateTransactionInput({
+      transactionType,
+      accountId,
+      accountType: selectedAccount?.type,
+      toAccountId,
+      toAccountType: selectedToAccount?.type,
+      payeeName,
+      categoryId,
+      amount: parsedAmount,
+      date,
+    });
 
-    if (!accountId) newErrors.accountId = 'Account is required';
-    
-    // Only validate payee and category for expense/income transactions
-    if (transactionType !== 'transfer' && transactionType !== 'payment') {
-      if (!payeeName.trim()) newErrors.payeeName = 'Payee is required';
-      if (!categoryId) newErrors.categoryId = 'Category is required';
-    }
-    
-    // For transfers and payments, validate toAccountId
-    if (transactionType === 'transfer' || transactionType === 'payment') {
-      if (!toAccountId) newErrors.toAccountId = 'Destination account is required';
-    }
-    
-    if (!amount || parseFloat(amount) <= 0) newErrors.amount = 'Valid amount is required';
-    if (!date) newErrors.date = 'Date is required';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(inputErrors);
+    return Object.keys(inputErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

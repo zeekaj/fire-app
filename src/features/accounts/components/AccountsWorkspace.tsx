@@ -16,12 +16,10 @@ export function AccountsWorkspace() {
   const { data: accounts = [], isLoading, error } = useAccounts();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState<string | undefined>();
   const [endDate, setEndDate] = useState<string | undefined>();
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [quickAddType, setQuickAddType] = useState<'expense'|'income'|'transfer'|'payment'|undefined>(undefined);
-  const searchRef = useRef<HTMLInputElement | null>(null);
   const startDateRef = useRef<HTMLInputElement | null>(null);
 
   const classify = (type: string, balance: number | null | undefined) => {
@@ -100,14 +98,8 @@ export function AccountsWorkspace() {
   }, [selectedId, startDate, endDate]);
 
   // Filtered lists and navigation list (used by keyboard handlers)
-  const filteredAssets = useMemo(
-    () => assets.filter(a => a.name.toLowerCase().includes(search.toLowerCase())),
-    [assets, search]
-  );
-  const filteredLiabilities = useMemo(
-    () => liabilities.filter(a => a.name.toLowerCase().includes(search.toLowerCase())),
-    [liabilities, search]
-  );
+  const filteredAssets = useMemo(() => assets, [assets]);
+  const filteredLiabilities = useMemo(() => liabilities, [liabilities]);
   const navList = useMemo(() => [...filteredAssets, ...filteredLiabilities], [filteredAssets, filteredLiabilities]);
 
   // Keyboard shortcuts: A=Add, T=Transfer, F or /=Search, D toggle 30d, Shift+D This Month, ↑/↓ navigate, Esc closes modal
@@ -139,9 +131,6 @@ export function AccountsWorkspace() {
       } else if (key === 't') {
         setQuickAddType('transfer');
         setIsQuickAddOpen(true);
-      } else if (key === 'f' || key === '/') {
-        e.preventDefault();
-        searchRef.current?.focus();
       } else if (key === 'd' && !e.shiftKey) {
         const now = new Date();
         if (!startDate && !endDate) {
@@ -211,17 +200,6 @@ export function AccountsWorkspace() {
               <div className="text-sm font-semibold text-gray-900">Accounts</div>
               <div className="text-xs text-gray-500">Net Worth: {formatCurrency(totals.net)}</div>
             </div>
-            {/* Search */}
-            <div className="px-3 py-2 border-b border-gray-100">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search accounts…"
-                ref={searchRef}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
             {/* Assets */}
             <div className="px-2 py-2">
               <div className="px-2 py-1 text-xs uppercase tracking-wide text-gray-500 flex items-center justify-between">
@@ -283,8 +261,6 @@ export function AccountsWorkspace() {
               <span>Add</span>
               <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded">T</kbd>
               <span>Transfer</span>
-              <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded">F</kbd>
-              <span>Search</span>
               <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded">D</kbd>
               <span>Dates</span>
               <kbd className="px-1.5 py-0.5 bg-gray-100 border border-gray-300 rounded">Shift+D</kbd>

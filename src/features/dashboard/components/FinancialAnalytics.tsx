@@ -41,7 +41,7 @@ export function FinancialAnalytics() {
     return map;
   }, [accounts]);
 
-  // Filter transactions by time range
+  // Filter transactions by time range and exclude transfers
   const transactions = useMemo(() => {
     const now = new Date();
     let startDate: Date;
@@ -60,10 +60,10 @@ export function FinancialAnalytics() {
         startDate = new Date(now.getFullYear(), 0, 1);
         break;
       case 'all':
-        return allTransactions;
+        return allTransactions.filter(tx => !tx.transfer_id); // Exclude transfers
     }
 
-    return allTransactions.filter(tx => new Date(tx.date) >= startDate);
+    return allTransactions.filter(tx => new Date(tx.date) >= startDate && !tx.transfer_id); // Exclude transfers
   }, [allTransactions, timeRange]);
 
   // Calculate transaction type breakdown

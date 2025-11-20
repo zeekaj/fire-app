@@ -33,6 +33,9 @@ export function EditScenarioModal({ isOpen, onClose, scenario }: EditScenarioMod
     expected_return_mean: 0.05,
     expected_return_stdev: 0.12,
     inflation_rate: 0.02,
+    effective_tax_rate: 0.25, // Effective tax rate in retirement
+    contribution_schedule: 'fixed' as 'fixed' | 'increasing' | 'decreasing', // Contribution schedule
+    withdrawal_schedule: 'fixed' as 'fixed' | 'increasing' | 'decreasing', // Withdrawal schedule
     withdrawal_strategy: 'guardrails' as 'fixed' | 'percentage' | 'guardrails',
     notes: null as string | null,
   });
@@ -52,6 +55,9 @@ export function EditScenarioModal({ isOpen, onClose, scenario }: EditScenarioMod
         expected_return_mean: scenario.expected_return_mean,
         expected_return_stdev: scenario.expected_return_stdev,
         inflation_rate: scenario.inflation_rate,
+        effective_tax_rate: 0.25, // Default tax rate
+        contribution_schedule: 'fixed' as 'fixed' | 'increasing' | 'decreasing', // Default
+        withdrawal_schedule: 'fixed' as 'fixed' | 'increasing' | 'decreasing', // Default
         withdrawal_strategy: scenario.withdrawal_strategy,
         notes: scenario.notes,
       });
@@ -330,7 +336,7 @@ export function EditScenarioModal({ isOpen, onClose, scenario }: EditScenarioMod
             </div>
 
             {/* Return Assumptions */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Expected Return
@@ -388,6 +394,25 @@ export function EditScenarioModal({ isOpen, onClose, scenario }: EditScenarioMod
                   <span className="absolute right-3 top-2 text-gray-500">%</span>
                 </div>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Effective Tax Rate
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={(formData.effective_tax_rate * 100).toFixed(1)}
+                    onChange={(e) => setFormData({ ...formData, effective_tax_rate: Number(e.target.value) / 100 })}
+                    className="w-full pr-8 pl-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min="0"
+                    max="50"
+                    step="0.1"
+                    required
+                    disabled={isUpdating}
+                  />
+                  <span className="absolute right-3 top-2 text-gray-500">%</span>
+                </div>
+              </div>
             </div>
 
             {/* Withdrawal Strategy */}
@@ -436,6 +461,108 @@ export function EditScenarioModal({ isOpen, onClose, scenario }: EditScenarioMod
                   <div>
                     <div className="font-medium">Fixed Percentage (4% Rule)</div>
                     <div className="text-sm text-gray-500">Withdraw fixed percentage of portfolio each year</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Contribution Schedule */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Contribution Schedule
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="fixed"
+                    checked={formData.contribution_schedule === 'fixed'}
+                    onChange={(e) => setFormData({ ...formData, contribution_schedule: e.target.value as any })}
+                    className="mr-3"
+                    disabled={isUpdating}
+                  />
+                  <div>
+                    <div className="font-medium">Fixed Amount</div>
+                    <div className="text-sm text-gray-500">Same contribution every year</div>
+                  </div>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="increasing"
+                    checked={formData.contribution_schedule === 'increasing'}
+                    onChange={(e) => setFormData({ ...formData, contribution_schedule: e.target.value as any })}
+                    className="mr-3"
+                    disabled={isUpdating}
+                  />
+                  <div>
+                    <div className="font-medium">Increasing</div>
+                    <div className="text-sm text-gray-500">Contributions increase over time (e.g., with salary growth)</div>
+                  </div>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="decreasing"
+                    checked={formData.contribution_schedule === 'decreasing'}
+                    onChange={(e) => setFormData({ ...formData, contribution_schedule: e.target.value as any })}
+                    className="mr-3"
+                    disabled={isUpdating}
+                  />
+                  <div>
+                    <div className="font-medium">Decreasing</div>
+                    <div className="text-sm text-gray-500">Contributions decrease over time</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Withdrawal Schedule */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Withdrawal Schedule
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="fixed"
+                    checked={formData.withdrawal_schedule === 'fixed'}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_schedule: e.target.value as any })}
+                    className="mr-3"
+                    disabled={isUpdating}
+                  />
+                  <div>
+                    <div className="font-medium">Fixed Amount</div>
+                    <div className="text-sm text-gray-500">Same withdrawal every year (inflation-adjusted)</div>
+                  </div>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="increasing"
+                    checked={formData.withdrawal_schedule === 'increasing'}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_schedule: e.target.value as any })}
+                    className="mr-3"
+                    disabled={isUpdating}
+                  />
+                  <div>
+                    <div className="font-medium">Increasing</div>
+                    <div className="text-sm text-gray-500">Withdrawals increase over time</div>
+                  </div>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="decreasing"
+                    checked={formData.withdrawal_schedule === 'decreasing'}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_schedule: e.target.value as any })}
+                    className="mr-3"
+                    disabled={isUpdating}
+                  />
+                  <div>
+                    <div className="font-medium">Decreasing</div>
+                    <div className="text-sm text-gray-500">Withdrawals decrease over time</div>
                   </div>
                 </label>
               </div>

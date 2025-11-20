@@ -71,7 +71,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signInWithGoogle = async () => {
     try {
-      await supabase.auth.signInWithOAuth({ provider: 'google' });
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: 'https://zeekaj.github.io/fire-app/' },
+      });
     } catch (error) {
       logger.error('Sign-in error', error);
     }

@@ -11,9 +11,12 @@ import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { usePayees } from '../hooks/usePayees';
 import { useCategories } from '../hooks/useCategories';
 import { TransactionRow } from './TransactionRow';
+import { supabase, requireAuth } from '@/lib/supabase';
+import { useQuery } from '@tanstack/react-query';
 import { EditTransaction } from './EditTransaction';
 import { TransactionAnalytics } from './TransactionAnalytics';
 import { ImportCSV } from './ImportCSV';
+import { ImportPDF } from './ImportPDF';
 import { SmartFeatures } from './SmartFeatures';
 import { formatCurrency } from '@/lib/format';
 import type { Database } from '@/lib/database.types';
@@ -36,6 +39,7 @@ export function TransactionsList() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showImportPDF, setShowImportPDF] = useState(false);
   
   // Data hooks
   const { data: transactions = [], isLoading, error } = useTransactions(500); // Increased limit
@@ -60,24 +64,55 @@ export function TransactionsList() {
   const payeeMap = useMemo(() => new Map(payees.map((p) => [p.id, p.name])), [payees]);
   const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, getCategoryLeafName(c)])), [categories]);
   
-  // Create a map for transfer linked accounts
+  // Create a map for transfer linked accounts. Some linked transactions may not be present in the
+  // current `transactions` array (limit/filtering). Batch-fetch missing linked transactions
+  // to ensure we can show the counterparty account name.
+  const transferIds = useMemo(() => {
+    return Array.from(new Set(transactions.filter(tx => tx.transfer_id).map(tx => tx.transfer_id))).filter(Boolean) as string[];
+  }, [transactions]);
+
+  const { data: fetchedLinkedTxs = [] } = useQuery({
+    queryKey: ['linked-transactions', transferIds.join(',')],
+    queryFn: async () => {
+      if (transferIds.length === 0) return [];
+      const userId = await requireAuth();
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('id, account_id, account:accounts(name)')
+        .in('id', transferIds)
+        .eq('created_by', userId as any);
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
   const transferAccountMap = useMemo(() => {
     const map = new Map<string, string>();
+
+    // First, try to resolve from the local transactions list
     transactions.forEach(tx => {
       if (tx.transfer_id) {
-        // Find the linked transaction
         const linkedTx = transactions.find(t => t.id === tx.transfer_id);
         if (linkedTx) {
-          // Map this transaction to its linked account name
           const linkedAccountName = accountMap.get(linkedTx.account_id);
-          if (linkedAccountName) {
-            map.set(tx.id, linkedAccountName);
-          }
+          if (linkedAccountName) map.set(tx.id, linkedAccountName);
         }
       }
     });
+
+    // Next, use fetched linked transactions for any unresolved transfer ids
+    fetchedLinkedTxs.forEach((ltx: any) => {
+      // Find any original transactions that reference this linked tx
+      const referencing = transactions.filter(tx => tx.transfer_id === ltx.id);
+      referencing.forEach(r => {
+        const name = ltx.account?.name || accountMap.get(ltx.account_id) || 'Unknown Account';
+        map.set(r.id, name);
+      });
+    });
+
     return map;
-  }, [transactions, accountMap]);
+  }, [transactions, fetchedLinkedTxs, accountMap]);
 
   // Date range calculation
   const getDateRange = (filter: DateFilter): { start: Date; end: Date } | null => {
@@ -342,6 +377,12 @@ export function TransactionsList() {
             📤 Import CSV
           </button>
           <button
+            onClick={() => setShowImportPDF(true)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            📄 Import PDF
+          </button>
+          <button
             onClick={handleExportCSV}
             className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
           >
@@ -581,6 +622,11 @@ export function TransactionsList() {
       {/* Import CSV Modal */}
       {showImport && (
         <ImportCSV onClose={() => setShowImport(false)} />
+      )}
+
+      {/* Import PDF Modal */}
+      {showImportPDF && (
+        <ImportPDF onClose={() => setShowImportPDF(false)} />
       )}
     </div>
   );

@@ -24,8 +24,14 @@
 ## ✅ Recently Completed (November 2025)
 
 ### Analytics & Net Worth Polish
-- **Debt Payments Analytics Fix** - Exclude credit card payoffs from “Debt Payments” to avoid double-counting purchases; continue to count loan/mortgage payments
-- **Net Worth History UX** - Backfill button added to header; Snapshot/Backfill buttons labeled with accessibility; contextual help on title; “Last snapshot” date shown and auto-updated after actions
+- **Debt Payments Analytics Fix** - Exclude credit card payoffs from "Debt Payments" to avoid double-counting purchases; continue to count loan/mortgage payments
+- **Net Worth History UX** - Backfill button added to header; Snapshot/Backfill buttons labeled with accessibility; contextual help on title; "Last snapshot" date shown and auto-updated after actions
+- **Net Worth History Migration** - Applied migration 16 and refreshed types for net_worth_snapshots table
+- **Transaction Validation** - Enhanced client-side validation for QuickAddTransaction with amount bounds, date sanity checks, and account type considerations; added server-side defensive checks in create hooks
+- **Transfer Analytics Guardrails** - Ensured analytics exclude transfer pairs by filtering transactions with transfer_id IS NOT NULL to avoid double-counting
+- **Monte Carlo Prototype** - Added Web Worker-based Monte Carlo simulation for FIRE scenarios with success rate and percentile analysis
+- **Scenario Assumption Editor Enhancement** - Added effective tax rate, contribution/withdrawal schedules to the scenario editor UI for clearer assumption management
+- **Scenario Comparison View** - Implemented side-by-side scenario comparison with key metrics, charts, and assumption differences
 
 ---
 
@@ -46,6 +52,36 @@
 - **Tax-Advantaged Account Optimization** - 401k, IRA, HSA strategy recommendations
 - **Geographic FIRE Planning** - Cost of living adjustments for different locations
 - **Healthcare Cost Projections** - Retirement healthcare expense modeling
+
+### 🔗 Merged recommendations & immediate actions
+_These items merge an expert review of the product with the existing Phase E priorities. They translate high-level roadmap goals into a short, prioritized backlog of concrete work (quick wins → medium → long-term)._ 
+
+Immediate / Quick wins (0–2 weeks)
+- Transaction validation & sanity checks: add client-side and unit-tested validation for `QuickAddTransaction` (amount bounds, date sanity, sign vs account type) and server-side defensive checks where appropriate.
+- Transfer clarity & analytics guardrails: visually mark transfers in registers/charts and ensure analytics exclude transfer pairs (filter where `transfer_id IS NULL`) to avoid double-counting.
+
+Short-term / Medium (2–6 weeks)
+- Scenario assumption editor: expose returns, inflation, effective tax rate, and contribution/withdrawal schedules in a clear UI and add a side-by-side scenario comparison view.
+- Reconciliation workflow: add a `reconciled` boolean (DB migration + UI) and a duplicate-detection prototype to help users match bank statements.
+- Basic tax-aware withdrawal ordering: add account-type-aware withdrawal rules (taxable vs pretax vs roth) for scenario projections.
+
+Medium-term (6–12 weeks)
+- Monte Carlo prototype (Web Worker): add toggleable stochastic projections (median + percentile bands) for scenarios; keep it client-side initially with a Worker to avoid blocking the UI.
+- Export capabilities (CSV first): add CSV export for Net Worth snapshots and Scenario outputs; follow with PDF/Excel later.
+
+Long-term / Strategic (Phase F+)
+- Bank integrations (Plaid) and portfolio sync: scope server-side token handling and privacy/security review before integrating.
+- Withdrawal sequencing optimizer & advanced tax strategies: build a small optimizer MVP for ordering withdrawals to minimize tax and maximize longevity.
+- Scheduled snapshots & reports: auto-snapshotting of net worth and scheduled exports/emailing for power users.
+
+Implementation notes & gotchas
+- The database triggers that auto-recalculate balances are a strength — prefer reading canonical net worth snapshots for forecasting to avoid race conditions from concurrent updates.
+- Before building features that rely on `net_worth_snapshots`, apply the migration and regenerate types to avoid runtime type workarounds.
+- Some Phase F items (Plaid, native apps) require server components and secrets/storage not currently in this frontend-only repo — include an infra & security plan.
+
+Next steps (recommended)
+1. Add reconciliation workflow: add a `reconciled` boolean (DB migration + UI) and a duplicate-detection prototype to help users match bank statements.
+2. Implement basic tax-aware withdrawal ordering: add account-type-aware withdrawal rules (taxable vs pretax vs roth) for scenario projections.
 
 #### 🤖 Smart Automation
 - **Automatic Transaction Categorization** - ML-powered categorization

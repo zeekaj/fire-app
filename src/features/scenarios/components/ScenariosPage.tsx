@@ -18,6 +18,7 @@ import {
 import { ScenarioDetailPage } from './ScenarioDetailPage';
 import { FIREScenarioSelectorTile } from './FIREScenarioSelectorTile';
 import { ScenarioTimeToFICard } from './ScenarioTimeToFICard';
+import { ScenarioComparisonView } from './ScenarioComparisonView';
 
 interface ScenariosPageProps {
   initialSelectedScenarioId?: string | null;
@@ -29,6 +30,24 @@ export function ScenariosPage({ initialSelectedScenarioId }: ScenariosPageProps 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(initialSelectedScenarioId || null);
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [scenariosToCompare, setScenariosToCompare] = useState<string[]>([]);
+  const [showComparisonView, setShowComparisonView] = useState(false);
+
+  // Show comparison view if requested
+  if (showComparisonView && scenariosToCompare.length === 2) {
+    const comparisonScenarios = scenarios?.filter(s => scenariosToCompare.includes(s.id)) || [];
+    return (
+      <ScenarioComparisonView
+        scenarios={comparisonScenarios}
+        onClose={() => {
+          setShowComparisonView(false);
+          setScenariosToCompare([]);
+          setComparisonMode(false);
+        }}
+      />
+    );
+  }
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this scenario?')) return;
@@ -39,6 +58,19 @@ export function ScenariosPage({ initialSelectedScenarioId }: ScenariosPageProps 
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const toggleScenarioForComparison = (scenarioId: string) => {
+    setScenariosToCompare(prev => 
+      prev.includes(scenarioId) 
+        ? prev.filter(id => id !== scenarioId)
+        : prev.length < 2 ? [...prev, scenarioId] : prev
+    );
+  };
+
+  const clearComparison = () => {
+    setScenariosToCompare([]);
+    setComparisonMode(false);
   };
 
   const calculateScenarioMetrics = (scenario: ScenarioDisplay) => {
@@ -128,12 +160,39 @@ export function ScenariosPage({ initialSelectedScenarioId }: ScenariosPageProps 
             Create and compare different retirement planning scenarios
           </p>
         </div>
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          + New Scenario
-        </button>
+        <div className="flex gap-2">
+          {comparisonMode ? (
+            <>
+              <button
+                onClick={clearComparison}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                Cancel Compare
+              </button>
+              {scenariosToCompare.length === 2 && (
+                <button
+                  onClick={() => setShowComparisonView(true)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Compare Selected
+                </button>
+              )}
+            </>
+          ) : (
+            <button
+              onClick={() => setComparisonMode(true)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+            >
+              Compare Scenarios
+            </button>
+          )}
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            + New Scenario
+          </button>
+        </div>
       </div>
 
       {/* FIRE Scenario Selector */}
@@ -166,11 +225,28 @@ export function ScenariosPage({ initialSelectedScenarioId }: ScenariosPageProps 
             return (
               <div
                 key={scenario.id}
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => setSelectedScenarioId(scenario.id)}
+                className={`bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow ${
+                  comparisonMode ? 'cursor-default' : 'cursor-pointer'
+                } ${scenariosToCompare.includes(scenario.id) ? 'ring-2 ring-purple-500' : ''}`}
+                onClick={() => {
+                  if (comparisonMode) {
+                    toggleScenarioForComparison(scenario.id);
+                  } else {
+                    setSelectedScenarioId(scenario.id);
+                  }
+                }}
               >
                 {/* Header */}
                 <div className="flex justify-between items-start mb-4">
+                  {comparisonMode && (
+                    <input
+                      type="checkbox"
+                      checked={scenariosToCompare.includes(scenario.id)}
+                      onChange={() => toggleScenarioForComparison(scenario.id)}
+                      className="mr-3 mt-1"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  )}
                   <h3 className="text-xl font-semibold text-gray-900">{scenario.name}</h3>
                   <button
                     onClick={(e) => {

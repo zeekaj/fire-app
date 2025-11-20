@@ -13,6 +13,8 @@ Welcome to the FIRE Finance App documentation! This index will help you find the
 - **[FUTURE_ROADMAP.md](../../FUTURE_ROADMAP.md)** - Upcoming features and long-term vision
 
 ### 🐛 Bug Fixes & Improvements
+- **[2025-11-12_feature_updates.md](2025-11-12_feature_updates.md)** - Major feature updates (validation, Monte Carlo, scenario enhancements)
+- **[2025-11-03_analytics_update.md](2025-11-03_analytics_update.md)** - Analytics and Net Worth History improvements
 - **[UX_IMPROVEMENTS_OCT_28_2025.md](../UX_IMPROVEMENTS_OCT_28_2025.md)** - Latest UX improvements (liability accounts, custom date range, Quick Add enhancements)
 - **[CRITICAL_BUG_FIXES_OCT_2025.md](../CRITICAL_BUG_FIXES_OCT_2025.md)** - Critical bug fixes (credit cards, profiles, auth)
 - **[TRANSFER_FEATURE_COMPLETE.md](../TRANSFER_FEATURE_COMPLETE.md)** - Transfer feature implementation details

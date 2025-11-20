@@ -48,6 +48,13 @@ export function useCreateTransaction() {
 
   return useMutation({
     mutationFn: async (transaction: Omit<TransactionInsert, 'created_by'>) => {
+      // Server-side defensive validation
+      if (!transaction.account_id) throw new Error('Account ID is required');
+      if (!transaction.date) throw new Error('Date is required');
+      if (transaction.amount === undefined || transaction.amount === null) throw new Error('Amount is required');
+      if (Math.abs(transaction.amount) > 1_000_000_000) throw new Error('Amount is unrealistically large');
+      if (Math.abs(transaction.amount) === 0) throw new Error('Amount cannot be zero');
+
       // Auto-set transaction_type based on amount if not provided
       const transactionWithType = {
         ...transaction,
@@ -114,6 +121,75 @@ export function useDeleteTransaction() {
         .eq('created_by', userId as any);
 
       if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['account-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['income-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['net-worth-history'] });
+    },
+  });
+}
+
+/**
+ * Bulk delete transactions
+ */
+export function useBulkDeleteTransactions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const userId = await requireAuth();
+
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .in('id', ids)
+        .eq('created_by', userId as any);
+
+      if (error) throw error;
+      return ids.length;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['account-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['income-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['net-worth-history'] });
+    },
+  });
+}
+
+/**
+ * Bulk update transactions (for categorization, account moves, etc.)
+ */
+export function useBulkUpdateTransactions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ ids, updates }: { ids: string[]; updates: Partial<TransactionInsert> }) => {
+      const userId = await requireAuth();
+
+      // Update each transaction individually to ensure RLS policies are respected
+      const results = await Promise.all(
+        ids.map(id =>
+          supabase
+            .from('transactions')
+            .update(updates)
+            .eq('id', id)
+            .eq('created_by', userId as any)
+            .select()
+            .single()
+        )
+      );
+
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) {
+        throw new Error(`Failed to update ${errors.length} transaction(s)`);
+      }
+
+      return results.map(r => r.data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });

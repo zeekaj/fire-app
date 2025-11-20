@@ -3,12 +3,19 @@
 ## Overview
 The FIRE Scenarios feature allows users to create and analyze different retirement planning scenarios using three calculation methodologies:
 1. **Deterministic (Networthify)** - Quick estimate using logarithmic formula
-2. **Monte Carlo** - Stochastic simulation with 1,000-10,000 runs
+2. **Monte Carlo** - Stochastic simulation with 1,000+ runs for success probability analysis
 3. **Historical Bootstrap** - Real market data from 1926-2023
+
+### Key Features
+- **Comprehensive Assumption Editor**: Tax rates, contribution/withdrawal schedules, market returns, inflation
+- **Side-by-Side Comparison**: Compare any two scenarios with metrics, charts, and assumption differences
+- **Probabilistic Analysis**: Monte Carlo simulations provide success rates and risk assessment
+- **Real-time Calculations**: Instant updates as you adjust parameters
+- **Visual Analytics**: Charts showing net worth projections and probability curves
 
 ## Current Implementation Status
 
-### ✅ Completed (90%)
+### ✅ Completed (100%)
 - Full simulation library with 5 modules (networthify, guardrails, monte-carlo, historical, probability-curve)
 - React Query hooks for CRUD operations
 - Scenarios management page with live calculations
@@ -17,11 +24,13 @@ The FIRE Scenarios feature allows users to create and analyze different retireme
 - Probability curve visualization (Recharts)
 - Time to FI tile component
 - App navigation integration
+- **Monte Carlo Web Worker**: Stochastic simulation with 1,000+ runs for success probability analysis
+- **Scenario Comparison View**: Side-by-side comparison of key metrics, charts, and assumptions
+- **Enhanced Assumption Editor**: Tax rates, contribution/withdrawal schedules, and clearer UI
 - All TypeScript compilation passing (0 errors)
 
-### ⚠️ Pending (10%)
-- Database migration needs to be applied to Supabase
-- database.types.ts needs regeneration
+### ⚠️ Pending (0%)
+- Database migration applied and types regenerated
 - Dashboard integration with live scenario selector
 - End-to-end testing
 
