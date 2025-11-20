@@ -1,3 +1,4 @@
+````markdown
 # Decision: Deprecated 'type' Field Strategy
 
 ## Context
@@ -181,3 +182,5 @@ Before removing `type` in future version, verify:
 - [ACCOUNT_GROUPS.md](./ACCOUNT_GROUPS.md) - Complete Account Groups guide
 - [PHASE1_CLEANUP_REPORT.md](./PHASE1_CLEANUP_REPORT.md) - Phase 1 cleanup summary
 - Migration: `supabase/migrations/02_account_groups.sql`
+
+````

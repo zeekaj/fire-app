@@ -1,3 +1,4 @@
+````markdown
 # FIRE Finance App - Future Enhancement Roadmap
 
 **Last Updated**: October 20, 2025  
@@ -152,3 +153,4 @@ Move to Phase F advanced features:
 
 **Next Review Date**: November 1, 2025  
 **Status**: Phase D in progress, Age columns improvement documented for Phase E
+````
