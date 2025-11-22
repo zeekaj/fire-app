@@ -4,12 +4,14 @@
  * Modal for editing existing transactions with delete capability
  */
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAccounts } from '@/features/accounts/hooks/useAccounts';
 import { usePayees } from '../hooks/usePayees';
 import { useCreatePayee } from '../hooks/useCreatePayee';
 import { useUpdateTransaction, useDeleteTransaction, useTransactions } from '../hooks/useTransactions';
 import { useDeleteTransfer } from '../hooks/useTransfer';
+import { useBudgetableCategories } from '../hooks/useCategories';
 import { PayeeSuggestionInput } from './PayeeSuggestionInput';
 import { CategorySuggestionInput } from './CategorySuggestionInput';
 import { logger } from '@/lib/logger';
@@ -26,13 +28,22 @@ interface EditTransactionProps {
 type TransactionType = 'expense' | 'income';
 
 export function EditTransaction({ transaction, isOpen, onClose }: EditTransactionProps) {
+  const queryClient = useQueryClient();
   const { data: accounts = [] } = useAccounts();
   const { data: payees = [] } = usePayees();
-  const { data: transactions = [] } = useTransactions(); // Need this to find linked transfer
+  const { data: transactions = [] } = useTransactions(100);
+  const { data: categories = [] } = useBudgetableCategories();
   const updateTransaction = useUpdateTransaction();
   const deleteTransaction = useDeleteTransaction();
   const deleteTransfer = useDeleteTransfer();
   const createPayee = useCreatePayee();
+
+  // Refetch transactions when modal opens to ensure fresh data
+  useEffect(() => {
+    if (isOpen) {
+      queryClient.invalidateQueries({ queryKey: ['transactions', 100] });
+    }
+  }, [isOpen, queryClient]);
 
   // Check if this is a transfer or debt payment
   const isTransfer = !!transaction.transfer_id;
@@ -42,6 +53,37 @@ export function EditTransaction({ transaction, isOpen, onClose }: EditTransactio
   const linkedTransaction = isTransfer 
     ? transactions.find(t => t.id === transaction.transfer_id)
     : null;
+
+  // Calculate recent categories from actual transaction usage (both income and expense)
+  const recentCategories = React.useMemo(() => {
+    if (!transactions.length || !categories.length) return [];
+    
+    // Track the most recent usage time for each category
+    const categoryUsage = new Map<string, { category: any; lastUsed: string }>();
+    
+    // For each transaction, update the lastUsed time if it's more recent
+    transactions.forEach(t => {
+      if (t.category_id && !t.transfer_id) {
+        // Ensure we always have a string timestamp (fallback to now if missing)
+        const timestamp = (t.updated_at ?? t.created_at ?? new Date().toISOString()) as string;
+        const existing = categoryUsage.get(t.category_id);
+
+        // Only update if this is a new category or has a more recent timestamp
+        if (!existing || timestamp > existing.lastUsed) {
+          const cat = categories.find(c => c.id === t.category_id);
+          if (cat) {
+            categoryUsage.set(t.category_id, { category: cat, lastUsed: timestamp });
+          }
+        }
+      }
+    });
+    
+    // Sort by lastUsed timestamp (most recent first) and take top 10
+    const sorted = Array.from(categoryUsage.values())
+      .sort((a, b) => b.lastUsed.localeCompare(a.lastUsed));
+
+    return sorted.map(item => item.category).slice(0, 10);
+  }, [transactions, categories, isOpen]);
 
   // For transfers, we need different state
   const [date, setDate] = useState(transaction.date);
@@ -219,6 +261,9 @@ export function EditTransaction({ transaction, isOpen, onClose }: EditTransactio
         },
       });
 
+      // Wait for queries to invalidate and refetch
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       onClose();
     } catch (error) {
       logger.error('Failed to update transaction', error);
@@ -425,7 +470,7 @@ export function EditTransaction({ transaction, isOpen, onClose }: EditTransactio
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
+        <div className="relative bg-white rounded-xl shadow-xl max-w-2xl w-full p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -446,7 +491,10 @@ export function EditTransaction({ transaction, isOpen, onClose }: EditTransactio
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Form - Left/Center Column */}
+            <div className="lg:col-span-2">
+              <form onSubmit={handleSubmit} className="space-y-4">
             {/* Income/Expense Toggle */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -645,6 +693,35 @@ export function EditTransaction({ transaction, isOpen, onClose }: EditTransactio
               </div>
             </div>
           </form>
+        </div>
+
+        {/* Sidebar - Recent Categories */}
+        <div className="space-y-4">
+          {/* Recent Categories */}
+          {recentCategories.length > 0 && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Recent Categories</h3>
+              <div className="space-y-2">
+                {recentCategories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategoryId(cat.id)}
+                    className={`w-full text-left px-3 py-2 text-xs rounded transition-colors ${
+                      categoryId === cat.id
+                        ? 'bg-primary text-white'
+                        : 'bg-white border border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    <div className="font-medium truncate">{cat.name}</div>
+                    <div className="text-xs opacity-75 truncate">{cat.path}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
         </div>
       </div>
     </div>

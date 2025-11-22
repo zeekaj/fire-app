@@ -5,9 +5,11 @@
  */
 
 import { useState } from 'react';
-import { useCategories, useCreateCategory } from '@/features/transactions/hooks/useCategories';
+import { useCategories, useCreateCategory, useDeleteCategory, useCascadeDeleteCategory, useUpdateCategory } from '@/features/transactions/hooks/useCategories';
+import { useToast } from '@/app/providers/ToastProvider';
 import { CategoryList } from './CategoryList';
 import { CategoryForm } from './CategoryForm';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import type { Database } from '@/lib/database.types';
 
 type Category = Database['public']['Tables']['categories']['Row'];
@@ -15,8 +17,16 @@ type Category = Database['public']['Tables']['categories']['Row'];
 export function CategoriesPage() {
   const { data: categories = [], isLoading } = useCategories();
   const createCategory = useCreateCategory();
+  const deleteCategory = useDeleteCategory();
+  const cascadeDelete = useCascadeDeleteCategory();
+  const updateCategory = useUpdateCategory();
+  const toast = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{
+    category: Category;
+    hasChildren: boolean;
+  } | null>(null);
 
   // Organize categories into tree structure
   const parentCategories = categories.filter(c => c.parent_id === null);
@@ -46,11 +56,11 @@ export function CategoriesPage() {
         parent_id: data.parentId,
         is_budgetable: data.isBudgetable
       });
-
+      toast.push('Category created', 'success');
       setShowAddForm(false);
     } catch (error) {
       console.error('Failed to create category:', error);
-      alert('Failed to create category. Please try again.');
+      toast.push('Failed to create category', 'error');
     }
   };
 
@@ -105,6 +115,16 @@ export function CategoriesPage() {
           parentCategories={parentCategories}
           childCategories={childCategories}
           onEdit={setEditingCategory}
+          onDelete={(category) => {
+            // Show confirm dialog
+            const hasChildren = (childCategories.get(category.id)?.length || 0) > 0;
+            setConfirmDelete({ category, hasChildren });
+          }}
+          deletingId={
+            (deleteCategory.isPending && (deleteCategory.variables as string)) ||
+            (cascadeDelete.isPending && (cascadeDelete.variables as string)) ||
+            null
+          }
         />
       </div>
 
@@ -125,13 +145,53 @@ export function CategoriesPage() {
           category={editingCategory}
           parentCategories={parentCategories}
           onSubmit={async (data: { name: string; parentId: string | null; isBudgetable: boolean }) => {
-            // TODO: Add update category hook
-            console.log('Update category:', data);
-            setEditingCategory(null);
+            try {
+              await updateCategory.mutateAsync({
+                id: editingCategory.id,
+                name: data.name,
+                parentId: data.parentId,
+                isBudgetable: data.isBudgetable,
+              });
+              toast.push('Category updated', 'success');
+              setEditingCategory(null);
+            } catch (err: any) {
+              toast.push(err.message || 'Failed to update category', 'error');
+            }
           }}
           onCancel={() => setEditingCategory(null)}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        title="Delete Category"
+        message={
+          confirmDelete?.hasChildren
+            ? `Delete "${confirmDelete.category.name}" AND all its subcategories? Budgets & bills linked will be removed.`
+            : `Delete "${confirmDelete?.category.name}"? Related transactions will become Uncategorized.`
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={() => {
+          if (!confirmDelete) return;
+          
+          if (confirmDelete.hasChildren) {
+            cascadeDelete.mutate(confirmDelete.category.id, {
+              onSuccess: () => toast.push('Category + descendants deleted', 'success'),
+              onError: (err: any) => toast.push(err.message || 'Failed cascade delete', 'error')
+            });
+          } else {
+            deleteCategory.mutate(confirmDelete.category.id, {
+              onSuccess: () => toast.push('Category deleted', 'success'),
+              onError: (err: any) => toast.push(err.message || 'Failed to delete category', 'error')
+            });
+          }
+          setConfirmDelete(null);
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

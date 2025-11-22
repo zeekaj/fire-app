@@ -25,7 +25,8 @@ export function useTransactions(limit = 50) {
         .from('transactions')
         .select('*')
         .eq('created_by', userId as any)
-        .order('created_at', { ascending: false })
+        // Order by updated_at so recently edited transactions surface first
+        .order('updated_at', { ascending: false })
         .limit(limit);
 
       if (error) throw error;

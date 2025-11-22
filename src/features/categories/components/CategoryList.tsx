@@ -12,9 +12,13 @@ interface CategoryListProps {
   parentCategories: Category[];
   childCategories: Map<string, Category[]>;
   onEdit: (category: Category) => void;
+  onDelete: (category: Category) => void;
+  deletingId?: string | null;
 }
 
-export function CategoryList({ parentCategories, childCategories, onEdit }: CategoryListProps) {
+export function CategoryList({ parentCategories, childCategories, onEdit, onDelete, deletingId }: CategoryListProps) {
+  console.log('CategoryList rendering with delete handlers:', { hasOnDelete: !!onDelete, deletingId });
+  
   if (parentCategories.length === 0) {
     return (
       <div className="p-8 text-center text-gray-500">
@@ -55,6 +59,13 @@ export function CategoryList({ parentCategories, childCategories, onEdit }: Cate
                 >
                   Edit
                 </button>
+                <button
+                  disabled={deletingId === parent.id}
+                  onClick={() => onDelete(parent)}
+                  className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                >
+                  {deletingId === parent.id ? 'Deleting...' : children.length > 0 ? 'Delete + Subs' : 'Delete'}
+                </button>
               </div>
             </div>
 
@@ -77,12 +88,21 @@ export function CategoryList({ parentCategories, childCategories, onEdit }: Cate
                       {child.is_envelope && (
                         <span className="text-xs">💰</span>
                       )}
-                      <button
-                        onClick={() => onEdit(child)}
-                        className="px-2 py-1 text-xs text-gray-600 hover:text-primary transition-colors"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => onEdit(child)}
+                          className="px-2 py-1 text-xs text-gray-600 hover:text-primary transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          disabled={deletingId === child.id}
+                          onClick={() => onDelete(child)}
+                          className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                        >
+                          {deletingId === child.id ? '…' : 'Delete'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

@@ -138,6 +138,7 @@ The `archive/` folder contains historical documentation that's no longer current
 - Database migration scripts and instructions
 - Historical SQL files and migration reports
 - Manual database update procedures
+ - 2025-11-22: Added trigger to set `updated_at` on `transactions` when rows are modified (`supabase/migrations/17_add_transactions_updated_at_trigger.sql`)
 
 ### Root Archive Files
 - Previous versions of README and USER_GUIDE

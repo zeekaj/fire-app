@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './app/providers/AuthProvider';
 import { AuthGate } from './app/providers/AuthGate';
 import App from './App';
+import { ToastProvider } from './app/providers/ToastProvider';
 import './styles/global.css';
 
 const queryClient = new QueryClient({
@@ -24,11 +25,13 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AuthGate>
-          <App />
-        </AuthGate>
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <AuthGate>
+            <App />
+          </AuthGate>
+        </AuthProvider>
+      </ToastProvider>
     </QueryClientProvider>
   </React.StrictMode>
 );
